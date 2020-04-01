@@ -57,27 +57,33 @@ NY = states[states['state'] == "New York"]
 ```
 
 ```python
-def resetdays(df):
+def resetDeathDays(df):
     df = df[df['deaths']!= 0]
     df = df.reset_index(drop = True)
     df = df.reset_index()
-    df = df.rename(columns={"index": "days"})
+    df = df.rename(columns={"index": "deathDays"})
+    return df
+def resetCaseDays(df):
+    df = df[df['cases']!= 0]
+    df = df.reset_index(drop = True)
+    df = df.reset_index()
+    df = df.rename(columns={"index": "caseDays"})
     return df
 ```
 
 ```python
-MD = resetdays(MD)
-DC = resetdays(DC)
-VA = resetdays(VA)
-NY = resetdays(NY)
+MDd = resetDeathDays(MD)
+DCd = resetDeathDays(DC)
+VAd = resetDeathDays(VA)
+NYd = resetDeathDays(NY)
 ```
 
 ```python
-DMV = pd.concat([MD, DC, VA])
+DMVd = pd.concat([MDd, DCd, VAd])
 ```
 
 ```python
-sns.lineplot(x = 'days', y = 'deaths', data = DMV, hue = 'state', 
+sns.lineplot(x = 'deathDays', y = 'deaths', data = DMVd, hue = 'state', 
              palette = 'magma_r', style = 'state', lw = 2)
 plt.yscale('log')
 plt.yticks([1, 2, 5, 10, 20, 50], 
@@ -89,28 +95,51 @@ plt.legend(fontsize = 10)
 ```
 
 ```python
-DMV.columns
+MDc = resetCaseDays(MD)
+DCc = resetCaseDays(DC)
+VAc = resetCaseDays(VA)
+NYc = resetCaseDays(NY)
+```
+
+```python
+DMVc = pd.concat([MDc, DCc, VAc])
 ```
 
 ```python
 sns.set_style('whitegrid')
 fig,ax = plt.subplots(figsize=r_[1.3,2]*6)
 
-sns.lineplot(x = 'days', y = 'cases', data = DMV, hue = 'state', 
+sns.lineplot(x = 'caseDays', y = 'cases', data = DMVc, hue = 'state', 
              palette = 'magma_r', lw = 2, ms=12, marker='.', ls='-')
 plt.yscale('log')
 v0 = r_[1,2,5,10]
 yt = np.setdiff1d(np.unique(np.hstack((v0,v0*10,v0*100))), [1,2,5])
 plt.yticks(yt, yt, fontsize = 10)
 plt.ylabel('Cases', fontsize = 15)
-#plt.xlabel('Days since first death', fontsize = 15)
+plt.xlabel('Days since first case', fontsize = 15)
 #plt.title('Coronavirus Deaths in DC, MD, VA, and NY', fontsize = 20)
 plt.legend(fontsize = 10)
 
 ```
 
 ```python
+sns.set_style('whitegrid')
+fig,ax = plt.subplots(figsize=r_[1.3,2]*6)
 
+sns.lineplot(x = 'deathDays', y = 'deaths', data = DMVd, hue = 'state', 
+             palette = 'magma_r', lw = 2, ms=12, marker='.', ls='-')
+plt.yscale('log')
+v0 = r_[1,2,5,10]
+yt = np.setdiff1d(np.unique(np.hstack((v0,v0*10))), [1,2,5])
+plt.yticks(yt, yt, fontsize = 10)
+plt.ylabel('Deaths', fontsize = 15)
+plt.xlabel('Days since first death', fontsize = 15)
+#plt.title('Coronavirus Deaths in DC, MD, VA, and NY', fontsize = 20)
+plt.legend(fontsize = 10)
+```
+
+```python
+DC
 ```
 
 ```python
