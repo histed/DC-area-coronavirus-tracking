@@ -142,7 +142,8 @@ params.loc[:,'fullname'] = pd.Series({ 'DC': 'District of Columbia', 'MD': 'Mary
 params.loc[:,'labYOff'] = pd.Series({ 'DC': -15, 'MD': +10, 'VA': -10, 'NY':-15})
 params.loc[:,'labXOff'] = pd.Series({ 'DC': 0, 'MD': 0, 'VA': +5, 'NY': 0})
 params.loc[:,'lw'] = pd.Series({ 'DC': 2, 'MD': 2, 'VA': 2, 'NY': 0.8})
-params.loc[:,'xoff'] = pd.Series({ 'DC': -9, 'MD': -6, 'VA': -6, 'NY': -0.3})
+#params.loc[:,'xoff'] = pd.Series({ 'DC': -9, 'MD': -6, 'VA': -6, 'NY': -0.3})
+params.loc[:,'xoff'] = pd.Series({ 'DC': 0, 'MD': 0, 'VA': 0, 'NY': -1})
 
 display(params)
 ```
@@ -153,14 +154,16 @@ fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
 xlim = r_[0,30]
 
-todayx = 0
+todayx = 0 #26
 def plot_state(state='DC', ax=ax, is_inset=False):
     global todayx
     desIx = ctDf.state == state
     ys = ctDf.loc[desIx,'positive']
     dtV = pd.to_datetime(ctDf.loc[desIx,'date'], format='%Y%m%d')
+    print(f'Latest data for {state}: {dtV.iloc[0]}')
     xs = (dtV - dtV.iloc[-1]) 
-    xs = r_[[x.days for x in xs]] #+ params.loc[state, 'xoff']
+    xs = r_[[x.days for x in xs]] + params.loc[state, 'xoff'] #- todayx
+
     ctDf.loc[desIx,'day0'] = xs
 
 
@@ -177,6 +180,7 @@ def plot_state(state='DC', ax=ax, is_inset=False):
                          xy=xy, xycoords='data', xytext=xytext, textcoords='offset points',
                          color=ph.get_color(),
                          fontweight='bold', fontsize=12)
+
         lw = params.loc[state,'lw']
         ph.set_linewidth(lw)
         if lw < 1:
@@ -184,7 +188,6 @@ def plot_state(state='DC', ax=ax, is_inset=False):
             ph.set_color('0.4')
             ah.set_color('0.4')
     todayx = np.max((todayx, np.max(xs)))
-
 
 plot_state('DC')
 plot_state('MD')
@@ -224,14 +227,17 @@ for (iD,dt) in enumerate(dtL):
 
 # inset
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+asp = ax.get_aspect()
+print(asp)
 with sns.axes_style('darkgrid'):
-    axins = inset_axes(ax, width=1.5, height=3.5, bbox_to_anchor=(1.2,0.25,0.3,0.6), bbox_transform=ax.transAxes)
+    r0 = 1.4
+    axins = inset_axes(ax, width=1.3*r0, height=2.2*r0, bbox_to_anchor=(1.2,0.25,0.3,0.6), bbox_transform=ax.transAxes)
 axins.set_facecolor('#EAEAF2')
 for st in ['DC', 'MD', 'VA']:
     plot_state(st, ax=axins, is_inset=True)
 fixups(ax=axins)
 
-axins.set_xlim([todayx-5,todayx+0.5])
+axins.set_xlim([todayx-2.9,todayx+1.0])
 axins.set_ylim((250,1900))
 
 axins.set_xticks([])
@@ -239,15 +245,25 @@ axins.set_xticks([])
 #axins.set_yticks([0])
 axins.yaxis.set_visible(False)
 axins.set_yticklabels([])
-
-
 axins.xaxis.set_visible(False)
 
-fig.savefig('./fig-output/%s.png'%datestr)
+xs = r_[1,4]
+dtL = [2,3,4]
+for (iD,dt) in enumerate(dtL):
+    ys = 2**(xs/dt)
+    y2 = ys*10**2.3#/(iD+1)
+    #axins.plot(xs+24, y2, '--', lw=0.5, color='0.6')
+    #ax.annotate('%d days to double'%dt, xy=(7,y2[1]/2), xycoords='data', fontsize=8, color='0.6')
+
+#ax.axvline(todayx, ls=':', color='0.5', lw=0.25)
+
+fig.tight_layout()
+fig.savefig('./fig-output/ct-%s.png'%datestr, dpi=300, bbox_inches='tight', bbox_extra_artists=[axins], pad_inches=0.5)
+            #bbox_inches=r_[0,0,10,15])#, 
 ```
 
 ```python
-
+todayx
 ```
 
 ```python
