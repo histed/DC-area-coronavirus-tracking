@@ -155,6 +155,8 @@ fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 xlim = r_[0,30]
 
 todayx = 0 #26
+params.loc[:,'plot_date'] = np.nan
+params['plot_date'] = params['plot_date'].astype('object')
 def plot_state(state='DC', ax=ax, is_inset=False):
     global todayx
     desIx = ctDf.state == state
@@ -165,6 +167,7 @@ def plot_state(state='DC', ax=ax, is_inset=False):
     xs = r_[[x.days for x in xs]] + params.loc[state, 'xoff'] #- todayx
 
     ctDf.loc[desIx,'day0'] = xs
+    params.loc[state,'plot_data'] = [{'xs':xs, 'ys':ys}]
 
 
     ph, = ax.plot(xs, ys, marker='.', label=state, lw=2, markersize=9)
@@ -188,6 +191,7 @@ def plot_state(state='DC', ax=ax, is_inset=False):
             ph.set_color('0.4')
             ah.set_color('0.4')
     todayx = np.max((todayx, np.max(xs)))
+    params.loc[state, 'color'] = ph.get_color()
 
 plot_state('DC')
 plot_state('MD')
@@ -237,8 +241,8 @@ for st in ['DC', 'MD', 'VA']:
     plot_state(st, ax=axins, is_inset=True)
 fixups(ax=axins)
 
-axins.set_xlim([todayx-2.9,todayx+1.0])
-axins.set_ylim((250,1900))
+axins.set_xlim(r_[todayx-2.9,todayx+1.0])
+axins.set_ylim(r_[250,1900]*1.2)
 
 axins.set_xticks([])
 #axins.set_yticks((200,500,1000), [''])#(200,500,1000))
@@ -247,9 +251,25 @@ axins.yaxis.set_visible(False)
 axins.set_yticklabels([])
 axins.xaxis.set_visible(False)
 
+# put doubling time on inset axes
+for st in ['DC', 'MD', 'VA']:
+    dD = params.loc[st, 'plot_data']
+    for tSt in r_[0,1,2]:
+        ns = r_[0:2]+tSt
+        x0 = np.mean(dD['xs'][ns])
+        y0 = np.mean(dD['ys'].iloc[ns])
+        slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
+        double_time = np.log10(2)/slope0
+        tStr = f'{double_time:.0f}'
+        if st == 'MD' and tSt == 0:
+            tStr = 'Doubling        \ntime (days): ' + tStr 
+        axins.annotate(tStr, xy=(x0,y0), va='bottom', ha='right', color=params.loc[st,'color'],
+                      xytext=(-1,2), textcoords='offset points')
+
+
 xs = r_[1,4]
 dtL = [2,3,4]
-for (iD,dt) in enumerate(dtL):
+for (iD,dt) in enumerate(dtL): 
     ys = 2**(xs/dt)
     y2 = ys*10**2.3#/(iD+1)
     #axins.plot(xs+24, y2, '--', lw=0.5, color='0.6')
@@ -257,9 +277,17 @@ for (iD,dt) in enumerate(dtL):
 
 #ax.axvline(todayx, ls=':', color='0.5', lw=0.25)
 
+ax.annotate('April 1', xy=(27,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
+            arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
+            color='0.3', ha='center')
+
 fig.tight_layout()
 fig.savefig('./fig-output/ct-%s.png'%datestr, dpi=300, bbox_inches='tight', bbox_extra_artists=[axins], pad_inches=0.5)
             #bbox_inches=r_[0,0,10,15])#, 
+```
+
+```python
+np.log10(2)/0.07
 ```
 
 ```python
