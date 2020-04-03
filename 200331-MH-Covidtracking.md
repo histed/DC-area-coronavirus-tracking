@@ -152,7 +152,7 @@ display(params)
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
-xlim = r_[0,30]
+xlim = r_[0,32]
 
 todayx = 0 #26
 params.loc[:,'plot_date'] = np.nan
@@ -242,7 +242,7 @@ for st in ['DC', 'MD', 'VA']:
 fixups(ax=axins)
 
 axins.set_xlim(r_[todayx-2.9,todayx+1.0])
-axins.set_ylim(r_[250,1900]*1.2)
+axins.set_ylim(r_[250,1900]*1.5)
 
 axins.set_xticks([])
 #axins.set_yticks((200,500,1000), [''])#(200,500,1000))
@@ -260,9 +260,13 @@ for st in ['DC', 'MD', 'VA']:
         y0 = np.mean(dD['ys'].iloc[ns])
         slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
         double_time = np.log10(2)/slope0
-        tStr = f'{double_time:.0f}'
+        pct_rise = (dD['ys'].iloc[ns[0]]/dD['ys'].iloc[ns[1]] * 100) - 100
+        print(pct_rise)
+        #tStr = f'{double_time:.0f}'
+        tStr = f'{pct_rise:.0f}'
         if st == 'MD' and tSt == 0:
-            tStr = 'Doubling        \ntime (days): ' + tStr 
+            #tStr = 'Doubling        \ntime (days): ' + tStr 
+            tStr = 'Rate of         \ngrowth (%): ' + tStr
         axins.annotate(tStr, xy=(x0,y0), va='bottom', ha='right', color=params.loc[st,'color'],
                       xytext=(-1,2), textcoords='offset points')
 
@@ -277,7 +281,7 @@ for (iD,dt) in enumerate(dtL):
 
 #ax.axvline(todayx, ls=':', color='0.5', lw=0.25)
 
-ax.annotate('April 1', xy=(27,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
+ax.annotate('April 2', xy=(28,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
             color='0.3', ha='center')
 
@@ -294,6 +298,67 @@ np.log10(2)/0.07
 todayx
 ```
 
-```python
+# Positive test rates in MD, DC, VA
 
+```python
+from argparse import Namespace
+plt.figure(figsize=r_[1,0.75]*[1,4]*5, dpi=100)
+gs = mpl.gridspec.GridSpec(4,1)
+
+ax = plt.subplot(gs[0])
+datD = {}
+for state in ['DC', 'MD', 'VA']:
+    desIx = ctDf.state == state
+    stDf = ctDf.loc[desIx,:]
+
+    posV = stDf.loc[:,'positive'][::-1]
+    negV = stDf.loc[:,'negative'][::-1]
+    pdV = np.diff(posV)
+    ndV = np.diff(negV)
+    if state == 'MD':  # some errors in testing data
+        #negV.iloc[23] = np.nan
+        ndV[22] = np.nan
+        display(ndV)
+    datD[state] = Namespace(posV=posV, negV=negV, pdV=pdV, ndV=ndV)
+
+    pctPos = pdV/(pdV+ndV)*100
+    plt.plot(pctPos, '.-', label=state)
+ax.set_title('Percent of tests positive, DC area')    
+#ax.legend(loc=2)
+ax.set_ylabel('Positive tests per day (%)')
+
+ax = plt.subplot(gs[1])
+ax2 = plt.subplot(gs[2])
+ax3 = plt.subplot(gs[3])
+for state in ['DC', 'MD', 'VA']:
+    dd = datD[state]
+    display(len(dd.posV))
+    pH = ax.plot(dd.pdV, '.-', label=state)        
+    pH = ax2.plot(dd.ndV, '.-', label=state)            
+    pH = ax3.plot(dd.ndV+dd.pdV, '.-', label=state)
+ax.legend()
+ax.set_title('Positive results per day')
+ax.set_ylabel('Results')
+
+ax2.set_title('Negative results per day')
+ax2.set_ylabel('Results')
+
+ax3.set_title('Total results per day')
+ax3.set_ylabel('Results')
+ax3.set_xlabel('Days; last is Apr 2')
+
+
+
+```
+
+```python
+plt.figure()
+
+for state in ['DC', 'MD', 'VA']:
+    desIx = ctDf.state == state
+    ys = ctDf.loc[desIx,'positive']
+    dtV = pd.to_datetime(ctDf.loc[desIx,'date'], format='%Y%m%d')
+    print(f'Latest data for {state}: {dtV.iloc[0]}')
+    xs = (dtV - dtV.iloc[-1]) 
+    xs = r_[[x.days for x in xs]] + params.loc[state,
 ```
