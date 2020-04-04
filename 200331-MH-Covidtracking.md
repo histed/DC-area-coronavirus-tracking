@@ -242,7 +242,7 @@ for st in ['DC', 'MD', 'VA']:
 fixups(ax=axins)
 
 axins.set_xlim(r_[todayx-2.9,todayx+1.0])
-axins.set_ylim(r_[250,1900]*1.5)
+axins.set_ylim(r_[250,1900]*1.8)
 
 axins.set_xticks([])
 #axins.set_yticks((200,500,1000), [''])#(200,500,1000))
@@ -281,7 +281,7 @@ for (iD,dt) in enumerate(dtL):
 
 #ax.axvline(todayx, ls=':', color='0.5', lw=0.25)
 
-ax.annotate('April 2', xy=(28,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
+ax.annotate('April 3', xy=(29,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
             color='0.3', ha='center')
 
@@ -295,6 +295,13 @@ np.log10(2)/0.07
 ```
 
 ```python
+for a in [2,3,4]:
+    pct = (2 ** (1/a)-1) * 100
+    print(f'{a} days is {pct:.2g} % ')
+
+```
+
+```python
 todayx
 ```
 
@@ -302,34 +309,55 @@ todayx
 
 ```python
 from argparse import Namespace
-plt.figure(figsize=r_[1,0.75]*[1,4]*5, dpi=100)
-gs = mpl.gridspec.GridSpec(4,1)
+daylabel = 'Days - last is Apr 3'
+fig = plt.figure(figsize=r_[1,0.75]*[2,3]*5, dpi=100)
+gs = mpl.gridspec.GridSpec(3,2)
 
-ax = plt.subplot(gs[0])
+ax = plt.subplot(gs[0,0])
 datD = {}
 for state in ['DC', 'MD', 'VA']:
     desIx = ctDf.state == state
-    stDf = ctDf.loc[desIx,:]
+    stDf = ctDf.loc[desIx,:].copy()
+    stDf.set_index('date', inplace=True)
 
     posV = stDf.loc[:,'positive'][::-1]
     negV = stDf.loc[:,'negative'][::-1]
     pdV = np.diff(posV)
     ndV = np.diff(negV)
+    # manual adjustments
     if state == 'MD':  # some errors in testing data
-        #negV.iloc[23] = np.nan
         ndV[22] = np.nan
-        display(ndV)
-    datD[state] = Namespace(posV=posV, negV=negV, pdV=pdV, ndV=ndV)
-
-    pctPos = pdV/(pdV+ndV)*100
+    if state == 'DC':    
+        print(ndV[24:])
+        #print(ndV.loc[20200402]/2)
+        ndV[26] = ndV[27]/2
+        ndV[27] = ndV[27]/2
+        #negV.loc[20200401] = negV.loc[20200402]/2
+    pctPos = pdV/(pdV+ndV)*100        
+    datD[state] = Namespace(posV=posV, negV=negV, pdV=pdV, ndV=ndV, pctPos=pctPos)
     plt.plot(pctPos, '.-', label=state)
 ax.set_title('Percent of tests positive, DC area')    
 #ax.legend(loc=2)
 ax.set_ylabel('Positive tests per day (%)')
+ax.set_xlabel(daylabel)
+# markup line
+desNs = r_[23:29]
+tV = np.hstack([datD[x].pctPos[desNs] for x in datD.keys()])
+tM = np.mean(tV)
+plt.plot(desNs, tM+desNs*0, color='k', lw=5, ls='-', alpha=1)
+# anno it
+ax.annotate('mean\npos test rates,\nlast 6 days', 
+            xy=(desNs[2],tM), xycoords='data', xytext=(-50,-120), textcoords='offset points',
+            arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0.1', color='k'), 
+            color='0.3', ha='center')
+ax.annotate('no neg tests\nreported by MD here', 
+            xy=(16,100), xycoords='data', xytext=(-10,-30), textcoords='offset points',
+            arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
+            color='0.3', ha='center')
 
-ax = plt.subplot(gs[1])
-ax2 = plt.subplot(gs[2])
-ax3 = plt.subplot(gs[3])
+ax = plt.subplot(gs[0,1])
+ax2 = plt.subplot(gs[1,1])
+ax3 = plt.subplot(gs[2,1])
 for state in ['DC', 'MD', 'VA']:
     dd = datD[state]
     display(len(dd.posV))
@@ -345,8 +373,18 @@ ax2.set_ylabel('Results')
 
 ax3.set_title('Total results per day')
 ax3.set_ylabel('Results')
-ax3.set_xlabel('Days; last is Apr 2')
+ax3.set_xlabel(daylabel)
 
+fig.suptitle('Positive test rates have remained constant while total tests grow,\n'
+             'suggesting testing criteria are relatively stable', 
+             fontsize=16, fontname='Roboto', fontweight='light',
+             x=0.05, ha='left', va='top')
+
+doSave = True
+if doSave:
+    fig.savefig('./fig-output/testing-%s.png'%datestr, 
+            dpi=300, bbox_inches='tight', pad_inches=0.5)
+            #bbox_inches=r_[0,0,10,15])#, 
 
 
 ```

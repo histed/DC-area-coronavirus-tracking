@@ -1,0 +1,35 @@
+NEW Fri April 3: #coronavirus cases continue to grow in DC area (DC, MD, VA) at a steady rate.  
+
+Little sign so far that growth is slowing–as physical distancing takes effect. Yesterday's slowing reversed today.
+Keep an eye out tomorrow (update ~7pm). 
+w/ @hannah_goldbach 1/
+
+
+A few notes:
+• changes in testing levels are limited, see below
+• mortality rate too low to see reliable changes over days
+• log y scale shows growth rate directly as slope
+• DC/MD/VA never hit peak NY growth of ~40%/day (2-day doubling). #flatteningthecurve is working. /2
+
+
+
+Many people have asked about testing, so we looked at it. It appears test rates in DC have remained relatively constant the past few days.  Meaning little evidence the growth data is affected by testing.  We'll keep watching this. /3
+
+
+Also, here's the FT's plot of cases across countries by 
+@jburnmurdoch
+https://twitter.com/jburnmurdoch/status/1246184639540146178
+
+DC/MD/VA are roughly tracking the overall US growth rate (slope) - increase ~20%/day, doubling in 3-4 days.
+
+
+And this is the reason we're just plotting the data, and not constructing structured models.  Just showing plots is a way to examine growth rate right now, as data is limited, both in DC area and in the US.
+https://twitter.com/DKThomp/status/1246128751672426497
+
+
+/end
+
+-----------------------
+
+Old
+https://twitter.com/robertstats/status/1245665871961436160
