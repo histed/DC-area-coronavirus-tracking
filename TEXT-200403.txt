@@ -6,6 +6,7 @@ TODO each day
 April /5
 - [ ] Cut some Alsos.
 - [ ] Automate the date text now in Illustrator
+- [ ] ask for retweet
 
 ------------------
 
