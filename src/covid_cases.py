@@ -18,18 +18,29 @@ mpl.rc('pdf', fonttype=42) # embed fonts on pdf output
 
 r_ = np.r_
 
-def plot_state(df, state, params, ax, is_inset):
+todayx = 0
+
+def plot_state(df, state, params, ax, is_inset=False, is_cases=True):
+    """
+    Params:
+        is_cases: True means plot cases, False means plot deaths
+    Returns:
+        params, df : updated param struct, data frame
+    """
     global todayx
-    todayx = 0
     desIx = df.state == state
-    ys = df.loc[desIx,'positive']
+    if is_cases:
+        ys = df.loc[desIx,'positive']
+    else: # deaths
+        ys = df.loc[desIx,'death']
+        
     dtV = pd.to_datetime(df.loc[desIx,'date'], format='%Y%m%d')
     print(f'Latest data for {state}: {dtV.iloc[0]}')
     xs = (dtV - dtV.iloc[-1]) 
     xs = r_[[x.days for x in xs]] + params.loc[state, 'xoff'] #- todayx
 
     df.loc[desIx,'day0'] = xs
-
+    params.loc[state,'plot_data'] = [{'xs':xs, 'ys':ys}]
 
     ph, = ax.plot(xs, ys, marker='.', label=state, lw=2, markersize=9)
     if state in params.index:
@@ -52,6 +63,9 @@ def plot_state(df, state, params, ax, is_inset):
             ph.set_color('0.4')
             ah.set_color('0.4')
     todayx = np.max((todayx, np.max(xs)))
+    params.loc[state, 'color'] = ph.get_color()
+
+    return df, params
     
 def fixups(ax):
     lp = r_[1,2,5]
@@ -63,9 +77,20 @@ def fixups(ax):
     ax.yaxis.set_major_locator(mpl.ticker.FixedLocator(yt, nbins=len(yt)+1))
     ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x,pos: '{:,.0f}'.format(x)))
     ax.set_ylabel('Cases', fontsize=13)
-    ax.set_xlabel('Days', fontsize=13)
+    ax.set_xlabel('Days since first positive test', fontsize=13)
+
+def plot_guide_lines(ax, yoffset_mult=1):
+    xs = r_[1,10]
+    dtL = [2,3,4]
+    for (iD,dt) in enumerate(dtL):
+        ys = 2**(xs/dt)
+        y2 = ys*10**3.4/(iD+1)  # offset each lines
+        y2 = y2*yoffset_mult
+        ax.plot(xs, y2, '--', lw=0.5, color='0.6')
+        ax.annotate('%d days to double'%dt, xy=(7,y2[1]/2), xycoords='data', fontsize=8, color='0.6')
+
         
-def inset(df, params, ax,  ylim, is_inset=True): 
+def inset(df, params, ax,  ylim, is_inset=True, is_cases=True): 
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
     asp = ax.get_aspect()
     with sns.axes_style('darkgrid'):
@@ -74,23 +99,38 @@ def inset(df, params, ax,  ylim, is_inset=True):
     axins.set_facecolor('#EAEAF2')
     
     for state in ['DC', 'MD', 'VA']:
-        plot_state(df, state, params, ax=axins, is_inset=True)
+        plot_state(df, state, params, ax=axins, is_inset=True, is_cases=is_cases)
     fixups(axins)
     
     DC = df[df['state'] == 'DC']
     todayx = DC['day0'].iloc[0]
-    axins.set_xlim([todayx-2.9,todayx+1.0])
+    axins.set_xlim(r_[todayx-2.9,todayx+1.0])
     axins.set_xticks([])
     axins.yaxis.set_visible(False)
     axins.set_yticklabels([])
     axins.xaxis.set_visible(False)
     axins.set_yscale('log')
-    axins.set_ylim(ylim*1.2)
+    axins.set_ylim(ylim)
+    return axins
     
-def case_double(xs, dtL, ax):
-    for (iD,dt) in enumerate(dtL):
-        ys = 2**(xs/dt)
-        y2 = ys*10**3.4/(iD+1)
-        ax.plot(xs, y2, '--', lw=0.5, color='0.6')
-        ax.annotate('%d days to double'%dt, xy=(7,y2[1]/2), xycoords='data', fontsize=8, color='0.6')
+def case_anno_inset_double(xs, ax, params):
+    # put doubling time on inset axes
+    for st in ['DC', 'MD', 'VA']:
+        dD = params.loc[st, 'plot_data']
+        for tSt in r_[0,1,2]:
+            ns = r_[0:2]+tSt
+            x0 = np.mean(dD['xs'][ns])
+            y0 = np.mean(dD['ys'].iloc[ns])
+            print(x0,y0)
+            slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
+            double_time = np.log10(2)/slope0
+            pct_rise = (dD['ys'].iloc[ns[0]]/dD['ys'].iloc[ns[1]] * 100) - 100
+            #tStr = f'{double_time:.0f}'
+            tStr = f'{pct_rise:.0f}'
+            if st == 'MD' and tSt == 0:
+                #tStr = 'Doubling        \ntime (days): ' + tStr
+                tStr = 'Growth             \nper day (%): ' + tStr
+            ax.annotate(tStr, xy=(x0,y0), va='bottom', ha='right', color=params.loc[st,'color'],
+                          xytext=(-1,2), textcoords='offset points')
+
     

@@ -13,7 +13,20 @@ jupyter:
     name: python3
 ---
 
+<!-- #region -->
 # Load covidtracking data and make some plots
+
+
+- 4/5 todo
+  - [ ] hannah refactored code, I adapted with recent updates
+  - [ ] run code tonight
+  - [ ] fix death inset not being annotated
+  
+<!-- #endregion -->
+
+```python
+
+```
 
 ```python
 %reload_ext autoreload
@@ -37,8 +50,7 @@ import datetime, dateutil.parser
 
 sns.set_style('whitegrid')
 
-from src import covid_cases as cvdC
-from src import covid_deaths as cvdD
+from src import covid_cases as cvd
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -62,12 +74,6 @@ datestr = datetime.datetime.now().strftime('%y%m%d')
 ctDf.to_hdf('./ct-data/covidtracking-data-%s.h5'%datestr, key='ct', complevel=9, complib='zlib')
 ```
 
-## todo
-
-- place element of xlim
-- 2nd plot 
-- etc
-
 ```python
 paramsC = pd.DataFrame(index={'DC','MD','VA','NY'}, columns=['fullname'])
 paramsC.loc[:,'fullname'] = pd.Series({ 'DC': 'District of Columbia', 'MD': 'Maryland', 'VA': 'Virginia'})
@@ -84,32 +90,35 @@ display(paramsC)
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
-xlim = r_[0,30]
+xlim = r_[0,32]
 todayx = 0 #26
 
 # big plot - states
+df = ctDf.copy()
 for st in ['DC', 'MD', 'VA', 'NY']:
-    cvdC.plot_state(ctDf, st, paramsC, ax, False)
+    df, paramsC = cvd.plot_state(df, st, paramsC, ax, False)
 
 # big plot fixup
-cvdC.fixups(ax)
+cvd.fixups(ax)
 #ADJUST AXIS LIMS TO FIT 
 ax.set_xlim(xlim)  
 ax.set_ylim([10, ax.get_ylim()[1]])
+cvd.plot_guide_lines(ax)
 
 # inset
-ylim = r_[300, 2400] #ADJUST YLIM TO FIT 
-axins = cvdC.inset(ctDf, paramsC, ax, ylim, is_inset=True)
+ylim = r_[250, 1900]*2.1 #ADJUST YLIM TO FIT 
+axins = cvd.inset(ctDf, paramsC, ax, ylim, is_inset=True)
 
 #case doubling lines 
 xs = r_[1,10] #ADJUST COORDS AS CASES CLIMB
 dtL = [2,3,4]
-cvdC.case_double(xs, dtL, ax) #might have to adjust in scropt 
+cvd.case_anno_inset_double(xs, dtL, axins, paramsC) #might have to adjust in scropt 
 
 #add arrow
-ax.annotate('April 2', xy=(28,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
-            arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
+ax.annotate('April 4', xy=(30,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
+            arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'),
             color='0.3', ha='center')
+
 # save fig 
 fig.tight_layout()
 fig.savefig('./fig-output/ct-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_inches=0.5)
@@ -119,40 +128,45 @@ fig.savefig('./fig-output/ct-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_
 ### Same plot for deaths
 
 ```python
-paramsD = pd.DataFrame(index={'DC','MD','VA','NJ'}, columns=['fullname'])
-paramsD.loc[:,'fullname'] = pd.Series({ 'DC': 'District of Columbia', 'MD': 'Maryland', 'VA': 'Virginia'})
-paramsD.loc[:,'labYOff'] = pd.Series({ 'DC': +10, 'MD': -10, 'VA': +15, 'NJ':0})
-paramsD.loc[:,'labXOff'] = pd.Series({ 'DC': 0, 'MD': +5, 'VA': +5, 'NJ': +10})
-paramsD.loc[:,'lw'] = pd.Series({ 'DC': 2, 'MD': 2, 'VA': 2, 'NJ': 0.8})
-paramsD.loc[:,'xoff'] = pd.Series({ 'DC': 0, 'MD': 0, 'VA': 0, 'NJ': -1})
+paramsD = paramsC.copy()
+#pd.DataFrame(index={'DC','MD','VA','NJ'}, columns=['fullname'])
+#paramsD.loc[:,'fullname'] = pd.Series({ 'DC': 'District of Columbia', 'MD': 'Maryland', 'VA': 'Virginia'})
+#paramsD.loc[:,'labYOff'] = pd.Series({ 'DC': +10, 'MD': -10, 'VA': +15, 'NJ':0})
+#paramsD.loc[:,'labXOff'] = pd.Series({ 'DC': 0, 'MD': +5, 'VA': +5, 'NJ': +10})
+#paramsD.loc[:,'lw'] = pd.Series({ 'DC': 2, 'MD': 2, 'VA': 2, 'NJ': 0.8})
+#paramsD.loc[:,'xoff'] = pd.Series({ 'DC': 0, 'MD': 0, 'VA': 0, 'NJ': -1})
 ```
 
 ```python
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
-xlim = r_[0,30]
+xlim = r_[0,32]
 
 todayx = 0 #26
 
-for st in ['DC', 'MD', 'VA', 'NJ']:
-    cvdD.plot_state(ctDf, st, paramsD, ax, False)
+df = ctDf.copy()
+for st in ['DC', 'MD', 'VA', 'NY']:
+    df, paramsD = cvd.plot_state(df, st, paramsD, ax, False, is_cases=False)
 
 # big plot fixup
-cvdD.fixups(ax)
+cvd.fixups(ax)
 #ADJUST AXIS LIMS TO FIT 
 ax.set_xlim(xlim)  
 ax.set_ylim([1, ax.get_ylim()[1]])
+cvd.plot_guide_lines(ax, yoffset_mult=10**-1.5)
 
 # inset
-ylim = r_[5, 50] #ADJUST YLIM TO FIT 
-cvdD.inset(ctDf, paramsD, ax, ylim, is_inset = True)
+ylim = r_[9, 50]*1.3 #ADJUST YLIM TO FIT  - get aspect ratio right
+cvd.inset(df, paramsD, ax, ylim, is_inset=True, is_cases=False)
 
-#Death doubling lines
-cvdD.case_double(xs, dtL, ax)
+
+#Death doubling annotation
+cvd.case_anno_inset_double(xs, axins, paramsD) #might have to adjust in scropt 
+
 
 #add arrow
-ax.annotate('April 2', xy=(28, 1), xycoords='data', xytext=(0,-30), textcoords='offset points',
+ax.annotate('April 4', xy=(30, 1), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
             color='0.3', ha='center')
 
