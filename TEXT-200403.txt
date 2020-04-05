@@ -1,3 +1,48 @@
+TODO each day
+- [ ] run notebook
+- [ ] Load in illustrator.  Make new file.  Update the date text.  Save as png
+- [ ] In twitter text, make sure to paste the ai output in tweet 1, and the figure in tweet 3/4.
+- [ ] github commit
+April /5
+- [ ] Cut some Alsos.
+- [ ] Automate the date text now in Illustrator
+
+------------------
+
+NEW Sat April 4: #coronavirus cases continue to rise steadily in DC area (DC, MD, VA).
+
+Little sign so far that growth is slowing as physical distancing takes effect. 
+Keep an eye out tomorrow for update ~8pm.
+w/ @hannah_goldbach 1/
+
+
+A few notes:
+• cases are a reasonable metric because positive test rates are fairly constant; see below for data
+• DC/MD/VA never hit peak NY growth of ~40%/day (2-day doubling). #flatteningthecurve is working. /2
+
+Also
+• mortality rate is too low to see reliable changes over days
+• log y scale shows growth rate directly as slope /3
+
+
+Many people have asked about testing, so we looked at it. It appears test rates in DC have remained relatively constant the past few days.  Meaning little evidence the growth data is affected by testing.  We'll keep watching this. /4
+
+
+Also, here's the FT's plot of cases across countries by 
+@jburnmurdoch
+https://twitter.com/jburnmurdoch/status/1246538228267712514
+
+DC/MD/VA are roughly tracking the overall US growth rate (slope) - increase ~20%/day, doubling in 3-4 days.  /5
+
+
+And this is the reason we're just plotting the data, and not constructing predictive, structured models.
+Showing this plot is a reasonable way to examine growth rate right now, as data is limited, both in DC area and in the US.
+https://twitter.com/DKThomp/status/1246128751672426497
+
+
+
+--------------------
+
 NEW Fri April 3: #coronavirus cases continue to grow in DC area (DC, MD, VA) at a steady rate.  
 
 Little sign so far that growth is slowing–as physical distancing takes effect. Yesterday's slowing reversed today.
@@ -33,3 +78,19 @@ https://twitter.com/DKThomp/status/1246128751672426497
 
 Old
 https://twitter.com/robertstats/status/1245665871961436160
+
+Facebook:
+
+A good way to monitor the coronavirus status in an area is to look at the rate of growth. (When the rate of growth slows, it means that social distancing is working, modulo effects of testing levels, etc.)
+The FT has some great visualization of data like this at the country level (see @jburnmurdoch on twitter). But I couldn't find plots like this for the local area. For us, thats the DMV - DC, Maryland, Virginia. And I want to have some sense of how long this is going to last here. So we made these plots. (with Hannah Goldbach, @hcgoldbach, a student in the lab).
+
+Plan is to keep generating this each day when new data becomes available in early evening.
+
+Bottom line for Apr 2: the past few days have shown little evidence of slowing. There is just a hint that MD and DC may be slowing. Let's see what the data look like tomorrow.
+
+FAQ:
+- What do these plots bring to the table? A: They are just a way to visualize the raw data and look at how the pandemic is changing here over time. The key parameter – growth rate – can be read off these log y-axes as the slope. We're not going to do any more fancy modeling, which comes with more assumptions.
+- Why cases, and not deaths? A: Because for now, the good news is that the death rate is relatively low, so the growth rate estimates are noisy.
+- Couldn't these plots be changed by changes in testing rates? A: Yes. But nationwide testing rates are holding steady over the past few days after a ramp-up. And if the testing rates go up, that means these growth rates are an overestimate, and that's good news. Will try over next few days to look at and perhaps adjust for changes in testing.
+
+Plan is to post these on Twitter first.
