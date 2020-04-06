@@ -77,7 +77,8 @@ def fixups(ax):
     ax.yaxis.set_major_locator(mpl.ticker.FixedLocator(yt, nbins=len(yt)+1))
     ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x,pos: '{:,.0f}'.format(x)))
     ax.set_ylabel('Cases', fontsize=13)
-    ax.set_xlabel('Days since first positive test', fontsize=13)
+    ax.set_xlabel('Days', fontsize=13)
+
 
 def plot_guide_lines(ax, yoffset_mult=1):
     xs = r_[1,10]
@@ -121,7 +122,6 @@ def case_anno_inset_double(xs, ax, params):
             ns = r_[0:2]+tSt
             x0 = np.mean(dD['xs'][ns])
             y0 = np.mean(dD['ys'].iloc[ns])
-            print(x0,y0)
             slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
             double_time = np.log10(2)/slope0
             pct_rise = (dD['ys'].iloc[ns[0]]/dD['ys'].iloc[ns[1]] * 100) - 100

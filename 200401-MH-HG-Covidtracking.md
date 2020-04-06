@@ -13,16 +13,16 @@ jupyter:
     name: python3
 ---
 
-<!-- #region -->
 # Load covidtracking data and make some plots
 
-
+- 4/6 todo
+  - set arrow location automatically (xmax)
+  
 - 4/5 todo
-  - [ ] hannah refactored code, I adapted with recent updates
-  - [ ] run code tonight
+  - [X] hannah refactored code, I adapted with recent updates
+  - [X] run code tonight
   - [ ] fix death inset not being annotated
   
-<!-- #endregion -->
 
 ```python
 
@@ -87,10 +87,17 @@ display(paramsC)
 ```
 
 ```python
+#Data: http://covidtracking.com  updated Apr 04 2020, 20:00 EDTGraphic: Hannah Goldbach, Mark Histed  @hannah_goldbach @histedlab
+tDStr = datetime.date.today().strftime('%b %-d 2020')
+tCredStr = 'Updated %s, 20:00 EDT\n  data: http://covidtracking.com\nGraphic: Hannah Goldbach, Mark Histed\n  @hannah_goldbach @histedlab' % tDStr
+print(tCredStr)
+```
+
+```python
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
-xlim = r_[0,32]
+xlim = r_[0,33]
 todayx = 0 #26
 
 # big plot - states
@@ -103,21 +110,27 @@ cvd.fixups(ax)
 #ADJUST AXIS LIMS TO FIT 
 ax.set_xlim(xlim)  
 ax.set_ylim([10, ax.get_ylim()[1]])
+ax.set_ylabel('Total cases')
+
 cvd.plot_guide_lines(ax)
 
 # inset
-ylim = r_[250, 1900]*2.1 #ADJUST YLIM TO FIT 
+ylim = r_[250, 1900]*2.3 #ADJUST YLIM TO FIT 
 axins = cvd.inset(ctDf, paramsC, ax, ylim, is_inset=True)
 
 #case doubling lines 
 xs = r_[1,10] #ADJUST COORDS AS CASES CLIMB
 dtL = [2,3,4]
-cvd.case_anno_inset_double(xs, dtL, axins, paramsC) #might have to adjust in scropt 
+cvd.case_anno_inset_double(xs, axins, paramsC) #might have to adjust in scropt 
 
 #add arrow
-ax.annotate('April 4', xy=(30,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
+tStr = datetime.date.today().strftime('%B %-d')
+ax.annotate(tStr, xy=(31,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'),
             color='0.3', ha='center')
+
+## credit string
+#ax.annotate(tCredStr, xy=(0.9,0.1), xycoords='axes fraction')
 
 # save fig 
 fig.tight_layout()
@@ -141,7 +154,7 @@ paramsD = paramsC.copy()
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
-xlim = r_[0,32]
+xlim = r_[0,33]
 
 todayx = 0 #26
 
@@ -154,19 +167,21 @@ cvd.fixups(ax)
 #ADJUST AXIS LIMS TO FIT 
 ax.set_xlim(xlim)  
 ax.set_ylim([1, ax.get_ylim()[1]])
+ax.set_ylabel('Total deaths')
 cvd.plot_guide_lines(ax, yoffset_mult=10**-1.5)
 
 # inset
 ylim = r_[9, 50]*1.3 #ADJUST YLIM TO FIT  - get aspect ratio right
-cvd.inset(df, paramsD, ax, ylim, is_inset=True, is_cases=False)
+#cvd.inset(df, paramsD, ax, ylim, is_inset=True, is_cases=False)
 
 
 #Death doubling annotation
-cvd.case_anno_inset_double(xs, axins, paramsD) #might have to adjust in scropt 
+#cvd.case_anno_inset_double(xs, axins, paramsD) #might have to adjust in scropt 
 
 
 #add arrow
-ax.annotate('April 4', xy=(30, 1), xycoords='data', xytext=(0,-30), textcoords='offset points',
+tStr = datetime.date.today().strftime('%B %-d')
+ax.annotate(tStr, xy=(31, 1), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
             color='0.3', ha='center')
 
@@ -176,6 +191,94 @@ fig.savefig('./fig-output/dt-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_
 ```
 
 ```python
+
+```
+
+# Positive test rates in MD, DC, VA
+
+```python
+from argparse import Namespace
+daylabel = 'Days - last is Apr 3'
+fig = plt.figure(figsize=r_[1,0.75]*[2,3]*5, dpi=100)
+gs = mpl.gridspec.GridSpec(3,2)
+
+ax = plt.subplot(gs[0,0])
+datD = {}
+for state in ['DC', 'MD', 'VA']:
+    desIx = ctDf.state == state
+    stDf = ctDf.loc[desIx,:].copy()
+    stDf.set_index('date', inplace=True)
+
+    posV = stDf.loc[:,'positive'][::-1]
+    negV = stDf.loc[:,'negative'][::-1]
+    pdV = np.diff(posV)
+    ndV = np.diff(negV)
+    # manual adjustments
+    if state == 'MD':  # some errors in testing data
+        ndV[22] = np.nan
+    if state == 'DC':    
+        ndV[26] = ndV[27]/2
+        ndV[27] = ndV[27]/2
+        #negV.loc[20200401] = negV.loc[20200402]/2
+    pctPos = pdV/(pdV+ndV)*100        
+    datD[state] = Namespace(posV=posV, negV=negV, pdV=pdV, ndV=ndV, pctPos=pctPos)
+    plt.plot(pctPos, '.-', label=state)
+ax.set_title('Percent of tests positive, DC area')    
+#ax.legend(loc=2)
+ax.set_ylabel('Positive tests per day (%)')
+ax.set_xlabel(daylabel)
+# markup line
+maxN = len(datD['DC'].pctPos)
+meanNDay = 7
+desNs = r_[maxN-meanNDay:maxN]
+tV = np.hstack([datD[x].pctPos[desNs] for x in datD.keys()])
+tM = np.mean(tV)
+plt.plot(desNs, tM+desNs*0, color='k', lw=5, ls='-', alpha=1)
+# anno it
+ax.annotate('mean\npos test rates,\nlast %d days'%meanNDay, 
+            xy=(desNs[2],tM), xycoords='data', xytext=(-50,-120), textcoords='offset points',
+            arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0.1', color='k'), 
+            color='0.3', ha='center')
+ax.annotate('no neg tests\nreported by MD here', 
+            xy=(16,100), xycoords='data', xytext=(-10,-30), textcoords='offset points',
+            arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
+            color='0.3', ha='center')
+
+ax = plt.subplot(gs[0,1])
+ax2 = plt.subplot(gs[1,1])
+ax3 = plt.subplot(gs[2,1])
+for state in ['DC', 'MD', 'VA']:
+    dd = datD[state]
+    display(len(dd.posV))
+    pH = ax.plot(dd.pdV, '.-', label=state)        
+    pH = ax2.plot(dd.ndV, '.-', label=state)            
+    pH = ax3.plot(dd.ndV+dd.pdV, '.-', label=state)
+ax.legend()
+ax.set_title('Positive results per day')
+ax.set_ylabel('Results')
+
+ax2.set_title('Negative results per day')
+ax2.set_ylabel('Results')
+
+ax3.set_title('Total results per day')
+ax3.set_ylabel('Results')
+ax3.set_xlabel(daylabel)
+
+fig.suptitle('Positive test rates have remained relatively constant while total tests grow,\n'
+             'suggesting testing criteria are stable', 
+             fontsize=16, fontname='Roboto', fontweight='light',
+             x=0.05, ha='left', va='top')
+
+ax3.annotate('Data notes:\n'
+             '• DC on Apr 1 reported zero neg. cases, and \n  on Apr 2 neg. count doubled, so we adjusted each\n  day to be half the Apr 3 number.',
+              xy=(0.05,0.1), xycoords='figure fraction')
+
+doSave = True
+if doSave:
+    fig.savefig('./fig-output/testing-%s.png'%datestr, 
+            dpi=300, bbox_inches='tight', pad_inches=0.5)
+            #bbox_inches=r_[0,0,10,15])#, 
+
 
 ```
 
