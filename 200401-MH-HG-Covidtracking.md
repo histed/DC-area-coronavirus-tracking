@@ -115,7 +115,7 @@ ax.set_ylabel('Total cases')
 cvd.plot_guide_lines(ax)
 
 # inset
-ylim = r_[250, 1900]*2.3 #ADJUST YLIM TO FIT 
+ylim = r_[350, 2100]*2.3 #ADJUST YLIM TO FIT 
 axins = cvd.inset(ctDf, paramsC, ax, ylim, is_inset=True)
 
 #case doubling lines 
@@ -125,7 +125,7 @@ cvd.case_anno_inset_double(xs, axins, paramsC) #might have to adjust in scropt
 
 #add arrow
 tStr = datetime.date.today().strftime('%B %-d')
-ax.annotate(tStr, xy=(31,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
+ax.annotate(tStr, xy=(32,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'),
             color='0.3', ha='center')
 
@@ -191,14 +191,19 @@ fig.savefig('./fig-output/dt-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_
 ```
 
 ```python
+for state in ['DC']:
+    desIx = ctDf.state == state
+    stDf = ctDf.loc[desIx,:].copy()
+    stDf.set_index('date', inplace=True)
 
+    posV = stDf.loc[:,'positive'][::-1]
 ```
 
 # Positive test rates in MD, DC, VA
 
 ```python
 from argparse import Namespace
-daylabel = 'Days - last is Apr 3'
+daylabel = 'Days - last is Apr 6'
 fig = plt.figure(figsize=r_[1,0.75]*[2,3]*5, dpi=100)
 gs = mpl.gridspec.GridSpec(3,2)
 
@@ -279,6 +284,14 @@ if doSave:
             dpi=300, bbox_inches='tight', pad_inches=0.5)
             #bbox_inches=r_[0,0,10,15])#, 
 
+
+```
+
+```python
+
+```
+
+```python
 
 ```
 
