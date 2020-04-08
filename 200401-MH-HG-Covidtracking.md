@@ -290,19 +290,12 @@ if doSave:
 ### Doubling time plot
 
 ```python
-def double_time(st, doubles): 
+def double_time(st, doubles):
     dD = paramsC.loc[st, 'plot_data']
-    doublesTemp = []
-    pctsTemp = []
-    for tSt in np.arange(0, len(dD['xs'])-2, 1):
-        ns = r_[0:2]+tSt
-        x0 = np.mean(dD['xs'][ns])
-        y0 = np.mean(dD['ys'].iloc[ns])
-        slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
-        double_time = np.log10(2)/slope0
-        doublesTemp.append(double_time)
-    doubles[st] = doublesTemp
-    return doubles 
+    slope0 = np.diff(np.log10(dD['ys'].to_numpy()))
+    double_time = -np.log10(2)/slope0
+    doubles[st] = double_time
+    return(doubles)
 
 def pct_rise(st, outDf):
     dD = paramsC.loc[st, 'plot_data']
@@ -335,6 +328,8 @@ for st in ['DC', 'MD', 'VA']:
 
 doubles = find_days(doubles)
 pcts = find_days(pcts)
+
+dtV = paramsC.loc['DC', 'plot_data']['dtV']
 ```
 
 ```python
@@ -368,6 +363,69 @@ fig.savefig('./fig-output/doubling-%s.png'%datestr,
 plt.axvline(x = 23, alpha = 0.5)
 plt.axvline(x = 16, alpha = 0.5)
 plt.axvline(x = 9, alpha = 0.5)"""
+```
+
+## MH figure
+
+```python
+doSave = True
+
+for st in ['DC', 'MD', 'VA']:
+    doubles[st+'_smooth'] = ptMH.math.smooth_lowess(doubles[st], x=None, span=8, robust=False, iter=None, axis=-1)
+
+sns.set_style('whitegrid')
+fig = plt.figure(figsize=r_[4, 3]*1.5, dpi=100)
+fig.set_facecolor('#f6fcfd')
+ax = plt.subplot()
+
+for (iS,st) in enumerate(['DC', 'MD', 'VA']):
+    pH, = plt.plot(doubles['day'], doubles[st], alpha = 0.8, lw = 0.75)
+    plt.plot(doubles['day'], doubles[st+'_smooth'], label = st, lw = 2.5, color = pH.get_color())
+    last_double = doubles[st+'_smooth'].iloc[-1]
+    paramsC.loc[st, 'last_double'] = last_double
+    paramsC.loc[st, 'color'] = pH.get_color()
+
+# last_double annotate    
+for (iS,st) in enumerate(['MD', 'DC', 'VA']):
+    last_double = paramsC.loc[st, 'last_double']
+    xy = (1.05, 0.65-iS*0.08)
+    tStr = f'{st}: {last_double:.2g}'
+    if iS == 0:
+        tStr = tStr + ' days'
+    ax.annotate(tStr, xy=xy, 
+                xycoords='axes fraction', color=paramsC.loc[st, 'color'], ha='left',
+                fontweight='bold', fontsize=14)
+    
+#plt.legend()
+plt.ylabel('doubling time for cases (days)', fontsize=12)
+
+plt.grid(False, which='both', axis='x')
+sns.despine(left=True, right=True, top=False, bottom=False)
+
+x_dates = dtV.dt.strftime('%b %-d')
+#xt = r_[5:len(x_dates):7]
+ax.set_xticks(xt-1)
+ax.set_ylim([0,ax.get_ylim()[-1]])
+ax.tick_params(axis='x', length=5, bottom=True, direction='out', width=0.25)
+ax.set_xticklabels(x_dates[::-1].iloc[xt], rotation=60)
+
+
+
+ax.annotate(tCredStr, fontsize=8, va='bottom', ha='right',
+              xy=(0.98,0.01), xycoords='axes fraction')
+fig.suptitle('Tue Apr 7: Growth is slowing in Washington, DC area',
+             fontsize=16, fontname='Roboto', fontweight='light',
+             x=0.05, y=1.05, ha='left', va='top')
+
+
+
+
+
+if doSave:
+    fig.savefig('./fig-output/doubling-MH-%s.png'%datestr, facecolor=fig.get_facecolor(),
+            dpi=300, bbox_inches='tight', pad_inches=0.5)
+
+
 ```
 
 ```python

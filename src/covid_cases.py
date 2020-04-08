@@ -13,6 +13,7 @@ import statsmodels.formula.api as smf
 import requests
 import json
 import datetime, dateutil.parser
+import pytoolsMH as ptMH
 
 mpl.rc('pdf', fonttype=42) # embed fonts on pdf output 
 
@@ -33,14 +34,14 @@ def plot_state(df, state, params, ax, is_inset=False, is_cases=True):
         ys = df.loc[desIx,'positive']
     else: # deaths
         ys = df.loc[desIx,'death']
-        
+
     dtV = pd.to_datetime(df.loc[desIx,'date'], format='%Y%m%d')
     print(f'Latest data for {state}: {dtV.iloc[0]}')
     xs = (dtV - dtV.iloc[-1]) 
     xs = r_[[x.days for x in xs]] + params.loc[state, 'xoff'] #- todayx
 
     df.loc[desIx,'day0'] = xs
-    params.loc[state,'plot_data'] = [{'xs':xs, 'ys':ys}]
+    params.loc[state,'plot_data'] = [{'xs':xs, 'ys':ys, 'dtV': dtV}]
 
     ph, = ax.plot(xs, ys, marker='.', label=state, lw=2, markersize=9)
     if state in params.index:
@@ -134,3 +135,60 @@ def case_anno_inset_double(xs, ax, params):
                           xytext=(-1,2), textcoords='offset points')
 
     
+
+
+class PlotDoubling:
+
+    def __init__(self, stateList=['DC','VA','MD'], paramsC=None):
+        self.params = paramsC
+        self.stateList = stateList
+
+        self.doubles = pd.DataFrame(columns=stateList)
+        self.pcts = pd.DataFrame(columns=stateList)
+        for st in self.stateList:
+            self.doubles = self._double_time(st, self.doubles)
+            self.pcts = self._pct_rise(st, self.pcts)
+
+        self.doubles = find_days(self.doubles)
+        self.pcts = find_days(self.pcts)
+
+        doubles = doubles.replace([np.inf, -np.inf], np.nan)
+        for st in self.stateList:
+            self.doubles[st].fillna((self.doubles[st].mean()), inplace=True)
+
+            
+    def _double_time(self, st, doubles): 
+        dD = self.params.loc[st, 'plot_data']
+        doublesTemp = []
+        pctsTemp = []
+        for tSt in np.arange(0, len(dD['xs'])-2, 1):
+            ns = r_[0:2]+tSt
+            x0 = np.mean(dD['xs'][ns])
+            y0 = np.mean(dD['ys'].iloc[ns])
+            slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
+            double_time = np.log10(2)/slope0
+            doublesTemp.append(double_time)
+        doubles[st] = doublesTemp
+        return doubles 
+
+    
+    def _pct_rise(self, st, pcts):
+        dD = self.params.loc[st, 'plot_data']
+        pctsTemp = []
+        for tSt in np.arange(0, len(dD['xs'])-2, 1):
+            ns = r_[0:2]+tSt
+            x0 = np.mean(dD['xs'][ns])
+            y0 = np.mean(dD['ys'].iloc[ns])
+            slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
+            pct_rise = (dD['ys'].iloc[ns[0]]/dD['ys'].iloc[ns[1]] * 100) - 100
+            pctsTemp.append(pct_rise)
+        pcts[st] = pctsTemp
+        return pcts
+
+    
+    def find_days(df): 
+        df = df.reindex(index=df.index[::-1])
+        df = df.reset_index(drop = True)
+        df = df.reset_index()
+        df = df.rename(columns = {'index': 'day'})
+        return df
