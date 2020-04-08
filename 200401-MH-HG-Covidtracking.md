@@ -97,7 +97,7 @@ print(tCredStr)
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
-xlim = r_[0,33]
+xlim = r_[0,35]
 todayx = 0 #26
 
 # big plot - states
@@ -115,7 +115,7 @@ ax.set_ylabel('Total cases')
 cvd.plot_guide_lines(ax)
 
 # inset
-ylim = r_[350, 2100]*2.3 #ADJUST YLIM TO FIT 
+ylim = r_[350, 2300]*2.3 #ADJUST YLIM TO FIT 
 axins = cvd.inset(ctDf, paramsC, ax, ylim, is_inset=True)
 
 #case doubling lines 
@@ -125,7 +125,7 @@ cvd.case_anno_inset_double(xs, axins, paramsC) #might have to adjust in scropt
 
 #add arrow
 tStr = datetime.date.today().strftime('%B %-d')
-ax.annotate(tStr, xy=(32,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
+ax.annotate(tStr, xy=(33,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'),
             color='0.3', ha='center')
 
@@ -154,7 +154,7 @@ paramsD = paramsC.copy()
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
-xlim = r_[0,33]
+xlim = r_[0,35]
 
 todayx = 0 #26
 
@@ -203,7 +203,7 @@ for state in ['DC']:
 
 ```python
 from argparse import Namespace
-daylabel = 'Days - last is Apr 6'
+daylabel = 'Days - last is Apr 7'
 fig = plt.figure(figsize=r_[1,0.75]*[2,3]*5, dpi=100)
 gs = mpl.gridspec.GridSpec(3,2)
 
@@ -287,12 +287,87 @@ if doSave:
 
 ```
 
-```python
+### Doubling time plot
 
+```python
+def double_time(st, doubles): 
+    dD = paramsC.loc[st, 'plot_data']
+    doublesTemp = []
+    pctsTemp = []
+    for tSt in np.arange(0, len(dD['xs'])-2, 1):
+        ns = r_[0:2]+tSt
+        x0 = np.mean(dD['xs'][ns])
+        y0 = np.mean(dD['ys'].iloc[ns])
+        slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
+        double_time = np.log10(2)/slope0
+        doublesTemp.append(double_time)
+    doubles[st] = doublesTemp
+    return doubles 
+
+def pct_rise(st, outDf):
+    dD = paramsC.loc[st, 'plot_data']
+    pctsTemp = []
+    for tSt in np.arange(0, len(dD['xs'])-2, 1):
+        ns = r_[0:2]+tSt
+        x0 = np.mean(dD['xs'][ns])
+        y0 = np.mean(dD['ys'].iloc[ns])
+        slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
+        pct_rise = (dD['ys'].iloc[ns[0]]/dD['ys'].iloc[ns[1]] * 100) - 100
+        pctsTemp.append(pct_rise)
+    pcts[st] = pctsTemp
+    return pcts
+
+def find_days(df): 
+    df = df.reindex(index=df.index[::-1])
+    df = df.reset_index(drop = True)
+    df = df.reset_index()
+    df = df.rename(columns = {'index': 'day'})
+    return df
 ```
 
 ```python
+doubles = pd.DataFrame(columns = {'DC', 'VA', 'MD'})
+pcts = pd.DataFrame(columns = {'DC', 'VA', 'MD'})
 
+for st in ['DC', 'MD', 'VA']:
+    doubles = double_time(st, doubles)
+    pcts = pct_rise(st, pcts)
+
+doubles = find_days(doubles)
+pcts = find_days(pcts)
+```
+
+```python
+doubles = doubles.replace([np.inf, -np.inf], np.nan)
+for st in ['DC', 'MD', 'VA']:
+    doubles[st].fillna((doubles[st].mean()), inplace=True)
+```
+
+```python
+import pytoolsMH as ptMH
+for st in ['DC', 'MD', 'VA']:
+    doubles[st+'_smooth'] = ptMH.math.smooth_lowess(doubles[st], x=None, span=7, robust=False, iter=None, axis=-1)
+```
+
+```python
+fig = plt.figure(figsize=r_[4, 3], dpi=100)
+for st in ['DC', 'MD', 'VA']:
+    plt.plot(doubles['day'], doubles[st], alpha = 0.8, lw = 0.75)
+    plt.legend()
+plt.plot(doubles['day'], doubles['DC_smooth'], label = 'DC', lw = 2.5, color = '#2678B2')
+plt.plot(doubles['day'], doubles['VA_smooth'], label = 'VA', lw = 2.5, color = '#339F34')
+plt.plot(doubles['day'], doubles['MD_smooth'], label = 'MD', lw = 2.5, color = '#FD7F28')
+plt.legend()
+plt.xlabel('days since first test')
+plt.ylabel('time for cases to double (days)')
+
+fig.savefig('./fig-output/doubling-%s.png'%datestr, 
+            dpi=300, bbox_inches='tight', pad_inches=0.5)
+
+"""plt.axvline(x = 30, alpha = 0.5)
+plt.axvline(x = 23, alpha = 0.5)
+plt.axvline(x = 16, alpha = 0.5)
+plt.axvline(x = 9, alpha = 0.5)"""
 ```
 
 ```python
