@@ -1,14 +1,47 @@
 TODO each day
 - [ ] run notebook
-- [ ] Load in illustrator.  Make new file.  Update the date text.  Save as png
-- [ ] In twitter text, make sure to paste the ai output in tweet 1, and the figure in tweet 3/4.
+- [ ] Paste in the two figs (testing and doubling)
 - [ ] github commit
 
-April /5
-- [ ] Cut some Alsos.
-- [ ] Automate the date text now in Illustrator
+For Thu: 
+- [ ] Automate / update the last date shown in the smoothed testing x-axis
 - [ ] ask for retweet
 
+Done:
+- [X] Cut some Alsos.
+- [X] Automate the date text now in Illustrator
+
+-------------
+
+Update for Wed Apr 8: while coronavirus cases are growing in the DC/mid-Atlantic area, there was a bit of a speed-up blip today.
+
+Looks like there were some changes in test reporting toay (see below).  
+
+These plots w/ 
+@hannah_goldbach
+
+-
+
+Testing details today:
+• MD reports a big bump in positive tests, but also a big bump in negative tests. This might have been a bounceback from lowered reporting last few days.
+• DC reports a big uptick in positive cases and case %.
+
+Still, the doubling-time plot above shows/
+
+-
+
+5-7 day doubling times.  Let's see what tomorrow brings.
+
+/end
+
+-------------
+
+Smoothing data to do Here's a plot where the heavy lines show a smoothing spline.  The raw data is the thin lines.
+
+If you're looking at time series
+Smoothing splines work better for estimating changs 
+
+-------------
 
 NEW Sun, Apr 5: #COVID19 cases continue growing in DC area (DC, MD, VA).
 Growth rate is slow vs NY, but not slowing further w/ social distancing.

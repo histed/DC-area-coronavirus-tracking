@@ -47,6 +47,7 @@ import statsmodels.formula.api as smf
 import requests
 import json
 import datetime, dateutil.parser
+from argparse import Namespace
 
 sns.set_style('whitegrid')
 
@@ -202,8 +203,11 @@ for state in ['DC']:
 # Positive test rates in MD, DC, VA
 
 ```python
-from argparse import Namespace
-daylabel = 'Days - last is Apr 7'
+sns.set_style('darkgrid')
+
+tDStr = datetime.date.today().strftime('%B %-d')
+daylabel = f'Days - last is {tDStr}'
+
 fig = plt.figure(figsize=r_[1,0.75]*[2,3]*5, dpi=100)
 gs = mpl.gridspec.GridSpec(3,2)
 
@@ -269,10 +273,11 @@ ax3.set_title('Total results per day')
 ax3.set_ylabel('Results')
 ax3.set_xlabel(daylabel)
 
-fig.suptitle('Positive test rates have remained relatively constant while total tests grow,\n'
-             'suggesting testing criteria are stable', 
-             fontsize=16, fontname='Roboto', fontweight='light',
-             x=0.05, ha='left', va='top')
+tStr = datetime.date.today().strftime('%a %B %-d')
+fig.suptitle(f'{tStr}: \n'
+             'Test rates, mid-Atlantic (DC, MD, VA)',
+             fontsize=16, fontname='Roboto', fontweight='light', 
+             x=0.05, y=0.92, ha='left', va='bottom')
 
 ax3.annotate('Data notes:\n'
              '• DC on Apr 1 reported zero neg. cases, and \n  on Apr 2 neg. count doubled, so we adjusted each\n  day to be half the Apr 3 number.',
@@ -375,8 +380,9 @@ for st in ['DC', 'MD', 'VA']:
 
 sns.set_style('whitegrid')
 fig = plt.figure(figsize=r_[4, 3]*1.5, dpi=100)
-fig.set_facecolor('#f6fcfd')
 ax = plt.subplot()
+ax.set_facecolor('#f6fcfd')
+
 
 for (iS,st) in enumerate(['DC', 'MD', 'VA']):
     pH, = plt.plot(doubles['day'], doubles[st], alpha = 0.8, lw = 0.75)
@@ -403,7 +409,7 @@ plt.grid(False, which='both', axis='x')
 sns.despine(left=True, right=True, top=False, bottom=False)
 
 x_dates = dtV.dt.strftime('%b %-d')
-#xt = r_[5:len(x_dates):7]
+xt = r_[5:len(x_dates):7]
 ax.set_xticks(xt-1)
 ax.set_ylim([0,ax.get_ylim()[-1]])
 ax.tick_params(axis='x', length=5, bottom=True, direction='out', width=0.25)
@@ -413,9 +419,9 @@ ax.set_xticklabels(x_dates[::-1].iloc[xt], rotation=60)
 
 ax.annotate(tCredStr, fontsize=8, va='bottom', ha='right',
               xy=(0.98,0.01), xycoords='axes fraction')
-fig.suptitle('Tue Apr 7: Growth is slowing in Washington, DC area',
+fig.suptitle('Wed Apr 8: Growth gradually slowing in Washington, DC area',
              fontsize=16, fontname='Roboto', fontweight='light',
-             x=0.05, y=1.05, ha='left', va='top')
+             x=0.05, y=1.01, ha='left', va='top')
 
 
 
