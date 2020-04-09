@@ -21,7 +21,7 @@ r_ = np.r_
 
 todayx = 0
 
-def plot_state(df, state, params, ax, is_inset=False, is_cases=True):
+def plot_state(df, state, params, ax, is_inset=False, is_cases=True, do_plot=True):
     """
     Params:
         is_cases: True means plot cases, False means plot deaths
@@ -43,28 +43,29 @@ def plot_state(df, state, params, ax, is_inset=False, is_cases=True):
     df.loc[desIx,'day0'] = xs
     params.loc[state,'plot_data'] = [{'xs':xs, 'ys':ys, 'dtV': dtV}]
 
-    ph, = ax.plot(xs, ys, marker='.', label=state, lw=2, markersize=9)
-    if state in params.index:
-        if is_inset:
-            xytext = r_[7,0]
-            xy=(xs[0],ys.iloc[0])
-        else:
-            xytext = (params.loc[state,'labXOff'], params.loc[state,'labYOff'])
-            xy=(xs[1],ys.iloc[1])
-            
-        ah = ax.annotate(state, 
-                         xy=xy, xycoords='data', xytext=xytext, textcoords='offset points',
-                         color=ph.get_color(),
-                         fontweight='bold', fontsize=12)
+    if do_plot:
+        ph, = ax.plot(xs, ys, marker='.', label=state, lw=2, markersize=9)
+        if state in params.index:
+            if is_inset:
+                xytext = r_[7,0]
+                xy=(xs[0],ys.iloc[0])
+            else:
+                xytext = (params.loc[state,'labXOff'], params.loc[state,'labYOff'])
+                xy=(xs[1],ys.iloc[1])
 
-        lw = params.loc[state,'lw']
-        ph.set_linewidth(lw)
-        if lw < 1:
-            ph.set_markersize(3)
-            ph.set_color('0.4')
-            ah.set_color('0.4')
-    todayx = np.max((todayx, np.max(xs)))
-    params.loc[state, 'color'] = ph.get_color()
+            ah = ax.annotate(state, 
+                             xy=xy, xycoords='data', xytext=xytext, textcoords='offset points',
+                             color=ph.get_color(),
+                             fontweight='bold', fontsize=12)
+
+            lw = params.loc[state,'lw']
+            ph.set_linewidth(lw)
+            if lw < 1:
+                ph.set_markersize(3)
+                ph.set_color('0.4')
+                ah.set_color('0.4')
+        #params.loc[state, 'color'] = ph.get_color()  # this is now set up front
+    #todayx = np.max((todayx, np.max(xs)))
 
     return df, params
     
@@ -137,58 +138,58 @@ def case_anno_inset_double(xs, ax, params):
     
 
 
-class PlotDoubling:
+# class PlotDoubling:
 
-    def __init__(self, stateList=['DC','VA','MD'], paramsC=None):
-        self.params = paramsC
-        self.stateList = stateList
+#     def __init__(self, stateList=['DC','VA','MD'], paramsC=None):
+#         self.params = paramsC
+#         self.stateList = stateList
 
-        self.doubles = pd.DataFrame(columns=stateList)
-        self.pcts = pd.DataFrame(columns=stateList)
-        for st in self.stateList:
-            self.doubles = self._double_time(st, self.doubles)
-            self.pcts = self._pct_rise(st, self.pcts)
+#         self.doubles = pd.DataFrame(columns=stateList)
+#         self.pcts = pd.DataFrame(columns=stateList)
+#         for st in self.stateList:
+#             self.doubles = self._double_time(st, self.doubles)
+#             self.pcts = self._pct_rise(st, self.pcts)
 
-        self.doubles = find_days(self.doubles)
-        self.pcts = find_days(self.pcts)
+#         self.doubles = find_days(self.doubles)
+#         self.pcts = find_days(self.pcts)
 
-        doubles = doubles.replace([np.inf, -np.inf], np.nan)
-        for st in self.stateList:
-            self.doubles[st].fillna((self.doubles[st].mean()), inplace=True)
+#         doubles = doubles.replace([np.inf, -np.inf], np.nan)
+#         for st in self.stateList:
+#             self.doubles[st].fillna((self.doubles[st].mean()), inplace=True)
 
             
-    def _double_time(self, st, doubles): 
-        dD = self.params.loc[st, 'plot_data']
-        doublesTemp = []
-        pctsTemp = []
-        for tSt in np.arange(0, len(dD['xs'])-2, 1):
-            ns = r_[0:2]+tSt
-            x0 = np.mean(dD['xs'][ns])
-            y0 = np.mean(dD['ys'].iloc[ns])
-            slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
-            double_time = np.log10(2)/slope0
-            doublesTemp.append(double_time)
-        doubles[st] = doublesTemp
-        return doubles 
+#     def _double_time(self, st, doubles): 
+#         dD = self.params.loc[st, 'plot_data']
+#         doublesTemp = []
+#         pctsTemp = []
+#         for tSt in np.arange(0, len(dD['xs'])-2, 1):
+#             ns = r_[0:2]+tSt
+#             x0 = np.mean(dD['xs'][ns])
+#             y0 = np.mean(dD['ys'].iloc[ns])
+#             slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
+#             double_time = np.log10(2)/slope0
+#             doublesTemp.append(double_time)
+#         doubles[st] = doublesTemp
+#         return doubles 
 
     
-    def _pct_rise(self, st, pcts):
-        dD = self.params.loc[st, 'plot_data']
-        pctsTemp = []
-        for tSt in np.arange(0, len(dD['xs'])-2, 1):
-            ns = r_[0:2]+tSt
-            x0 = np.mean(dD['xs'][ns])
-            y0 = np.mean(dD['ys'].iloc[ns])
-            slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
-            pct_rise = (dD['ys'].iloc[ns[0]]/dD['ys'].iloc[ns[1]] * 100) - 100
-            pctsTemp.append(pct_rise)
-        pcts[st] = pctsTemp
-        return pcts
+#     def _pct_rise(self, st, pcts):
+#         dD = self.params.loc[st, 'plot_data']
+#         pctsTemp = []
+#         for tSt in np.arange(0, len(dD['xs'])-2, 1):
+#             ns = r_[0:2]+tSt
+#             x0 = np.mean(dD['xs'][ns])
+#             y0 = np.mean(dD['ys'].iloc[ns])
+#             slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
+#             pct_rise = (dD['ys'].iloc[ns[0]]/dD['ys'].iloc[ns[1]] * 100) - 100
+#             pctsTemp.append(pct_rise)
+#         pcts[st] = pctsTemp
+#         return pcts
 
     
-    def find_days(df): 
-        df = df.reindex(index=df.index[::-1])
-        df = df.reset_index(drop = True)
-        df = df.reset_index()
-        df = df.rename(columns = {'index': 'day'})
-        return df
+#     def find_days(df): 
+#         df = df.reindex(index=df.index[::-1])
+#         df = df.reset_index(drop = True)
+#         df = df.reset_index()
+#         df = df.rename(columns = {'index': 'day'})
+#         return df
