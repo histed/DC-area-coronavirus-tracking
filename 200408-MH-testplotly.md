@@ -22,8 +22,13 @@ jupyter:
     jupyter labextension install jupyterlab-plotly plotlywidget --no-build
     ````
 
+
 - TODO
-  - [ ] make the smoothed plot below :)
+  - [X] make the smoothed plot below 
+  - [X] holy crap this works
+  - [ ] refactor the doubling time code into objects that make sense
+  - [ ] fix up the plot.ly figure to look nice
+  - [ ] figure out how to embed this in a github webpage
 
 
 - histed 200408
@@ -73,23 +78,22 @@ ctDf = pd.read_hdf('./ct-data/covidtracking-data-200408.h5', key='ct')
 
 ```python
 import plotly.express as px
+import plotly.offline
 ```
 
 ```python
 df = px.data.gapminder().query("country=='Canada'")
 fig = px.line(df, x="year", y="lifeExp", title='Life expectancy in Canada')
+# uncomment this to write an html file
+#fig.write_html("./test.html", include_plotlyjs='cdn')
 fig.show()
 ```
 
 ```python
-cr = requests.get('https://covidtracking.com/api/states/daily')
-data = r.json()
-ctDf = pd.DataFrame(data)
 
-# save current data
-datestr = datetime.datetime.now().strftime('%y%m%d')
-ctDf.to_hdf('./ct-data/covidtracking-data-%s.h5'%datestr, key='ct', complevel=9, complib='zlib')
 ```
+
+## constants
 
 ```python
 paramsC = pd.DataFrame(index={'DC','MD','VA','NY'}, columns=['fullname'])
@@ -97,214 +101,17 @@ paramsC.loc[:,'fullname'] = pd.Series({ 'DC': 'District of Columbia', 'MD': 'Mar
 paramsC.loc[:,'labYOff'] = pd.Series({ 'DC': -15, 'MD': +10, 'VA': -10, 'NY':-15})
 paramsC.loc[:,'labXOff'] = pd.Series({ 'DC': 0, 'MD': 0, 'VA': +5, 'NY': 0})
 paramsC.loc[:,'lw'] = pd.Series({ 'DC': 2, 'MD': 2, 'VA': 2, 'NY': 0.8})
-#params.loc[:,'xoff'] = pd.Series({ 'DC': -9, 'MD': -6, 'VA': -6, 'NY': -0.3})
 paramsC.loc[:,'xoff'] = pd.Series({ 'DC': 0, 'MD': 0, 'VA': 0, 'NY': -1})
+paramsC.loc[:,'color'] = pd.Series({ 'NY': 0.4, 'DC': '#1f77b4', 'MD': '#ff7f0e', 'VA': '#2ca02c'})
 
-display(paramsC)
-```
+#display(paramsC)
 
-```python
-#Data: http://covidtracking.com  updated Apr 04 2020, 20:00 EDTGraphic: Hannah Goldbach, Mark Histed  @hannah_goldbach @histedlab
 tDStr = datetime.date.today().strftime('%b %-d 2020')
 tCredStr = 'Updated %s, 20:00 EDT\n  data: http://covidtracking.com\nGraphic: Hannah Goldbach, Mark Histed\n  @hannah_goldbach @histedlab' % tDStr
-print(tCredStr)
+#print(tCredStr)
 ```
 
-```python
-sns.set_style('darkgrid')
-fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
-
-xlim = r_[0,35]
-todayx = 0 #26
-
-# big plot - states
-df = ctDf.copy()
-for st in ['DC', 'MD', 'VA', 'NY']:
-    df, paramsC = cvd.plot_state(df, st, paramsC, ax, False)
-
-# big plot fixup
-cvd.fixups(ax)
-#ADJUST AXIS LIMS TO FIT 
-ax.set_xlim(xlim)  
-ax.set_ylim([10, ax.get_ylim()[1]])
-ax.set_ylabel('Total cases')
-
-cvd.plot_guide_lines(ax)
-
-# inset
-ylim = r_[350, 2300]*2.3 #ADJUST YLIM TO FIT 
-axins = cvd.inset(ctDf, paramsC, ax, ylim, is_inset=True)
-
-#case doubling lines 
-xs = r_[1,10] #ADJUST COORDS AS CASES CLIMB
-dtL = [2,3,4]
-cvd.case_anno_inset_double(xs, axins, paramsC) #might have to adjust in scropt 
-
-#add arrow
-tStr = datetime.date.today().strftime('%B %-d')
-ax.annotate(tStr, xy=(33,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
-            arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'),
-            color='0.3', ha='center')
-
-## credit string
-#ax.annotate(tCredStr, xy=(0.9,0.1), xycoords='axes fraction')
-
-# save fig 
-fig.tight_layout()
-fig.savefig('./fig-output/ct-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_inches=0.5)
-            #bbox_inches=r_[0,0,10,15])#, 
-```
-
-### Same plot for deaths
-
-```python
-paramsD = paramsC.copy()
-#pd.DataFrame(index={'DC','MD','VA','NJ'}, columns=['fullname'])
-#paramsD.loc[:,'fullname'] = pd.Series({ 'DC': 'District of Columbia', 'MD': 'Maryland', 'VA': 'Virginia'})
-#paramsD.loc[:,'labYOff'] = pd.Series({ 'DC': +10, 'MD': -10, 'VA': +15, 'NJ':0})
-#paramsD.loc[:,'labXOff'] = pd.Series({ 'DC': 0, 'MD': +5, 'VA': +5, 'NJ': +10})
-#paramsD.loc[:,'lw'] = pd.Series({ 'DC': 2, 'MD': 2, 'VA': 2, 'NJ': 0.8})
-#paramsD.loc[:,'xoff'] = pd.Series({ 'DC': 0, 'MD': 0, 'VA': 0, 'NJ': -1})
-```
-
-```python
-sns.set_style('darkgrid')
-fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
-
-xlim = r_[0,35]
-
-todayx = 0 #26
-
-df = ctDf.copy()
-for st in ['DC', 'MD', 'VA', 'NY']:
-    df, paramsD = cvd.plot_state(df, st, paramsD, ax, False, is_cases=False)
-
-# big plot fixup
-cvd.fixups(ax)
-#ADJUST AXIS LIMS TO FIT 
-ax.set_xlim(xlim)  
-ax.set_ylim([1, ax.get_ylim()[1]])
-ax.set_ylabel('Total deaths')
-cvd.plot_guide_lines(ax, yoffset_mult=10**-1.5)
-
-# inset
-ylim = r_[9, 50]*1.3 #ADJUST YLIM TO FIT  - get aspect ratio right
-#cvd.inset(df, paramsD, ax, ylim, is_inset=True, is_cases=False)
-
-
-#Death doubling annotation
-#cvd.case_anno_inset_double(xs, axins, paramsD) #might have to adjust in scropt 
-
-
-#add arrow
-tStr = datetime.date.today().strftime('%B %-d')
-ax.annotate(tStr, xy=(31, 1), xycoords='data', xytext=(0,-30), textcoords='offset points',
-            arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
-            color='0.3', ha='center')
-
-fig.tight_layout()
-fig.savefig('./fig-output/dt-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_inches=0.5)
-            #bbox_inches=r_[0,0,10,15])#, 
-```
-
-```python
-for state in ['DC']:
-    desIx = ctDf.state == state
-    stDf = ctDf.loc[desIx,:].copy()
-    stDf.set_index('date', inplace=True)
-
-    posV = stDf.loc[:,'positive'][::-1]
-```
-
-# Positive test rates in MD, DC, VA
-
-```python
-from argparse import Namespace
-daylabel = 'Days - last is Apr 7'
-fig = plt.figure(figsize=r_[1,0.75]*[2,3]*5, dpi=100)
-gs = mpl.gridspec.GridSpec(3,2)
-
-ax = plt.subplot(gs[0,0])
-datD = {}
-for state in ['DC', 'MD', 'VA']:
-    desIx = ctDf.state == state
-    stDf = ctDf.loc[desIx,:].copy()
-    stDf.set_index('date', inplace=True)
-
-    posV = stDf.loc[:,'positive'][::-1]
-    negV = stDf.loc[:,'negative'][::-1]
-    pdV = np.diff(posV)
-    ndV = np.diff(negV)
-    # manual adjustments
-    if state == 'MD':  # some errors in testing data
-        ndV[22] = np.nan
-    if state == 'DC':    
-        ndV[26] = ndV[27]/2
-        ndV[27] = ndV[27]/2
-        #negV.loc[20200401] = negV.loc[20200402]/2
-    pctPos = pdV/(pdV+ndV)*100        
-    datD[state] = Namespace(posV=posV, negV=negV, pdV=pdV, ndV=ndV, pctPos=pctPos)
-    plt.plot(pctPos, '.-', label=state)
-ax.set_title('Percent of tests positive, DC area')    
-#ax.legend(loc=2)
-ax.set_ylabel('Positive tests per day (%)')
-ax.set_xlabel(daylabel)
-# markup line
-maxN = len(datD['DC'].pctPos)
-meanNDay = 7
-desNs = r_[maxN-meanNDay:maxN]
-tV = np.hstack([datD[x].pctPos[desNs] for x in datD.keys()])
-tM = np.mean(tV)
-plt.plot(desNs, tM+desNs*0, color='k', lw=5, ls='-', alpha=1)
-# anno it
-ax.annotate('mean\npos test rates,\nlast %d days'%meanNDay, 
-            xy=(desNs[2],tM), xycoords='data', xytext=(-50,-120), textcoords='offset points',
-            arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0.1', color='k'), 
-            color='0.3', ha='center')
-ax.annotate('no neg tests\nreported by MD here', 
-            xy=(16,100), xycoords='data', xytext=(-10,-30), textcoords='offset points',
-            arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
-            color='0.3', ha='center')
-
-ax = plt.subplot(gs[0,1])
-ax2 = plt.subplot(gs[1,1])
-ax3 = plt.subplot(gs[2,1])
-for state in ['DC', 'MD', 'VA']:
-    dd = datD[state]
-    display(len(dd.posV))
-    pH = ax.plot(dd.pdV, '.-', label=state)        
-    pH = ax2.plot(dd.ndV, '.-', label=state)            
-    pH = ax3.plot(dd.ndV+dd.pdV, '.-', label=state)
-ax.legend()
-ax.set_title('Positive results per day')
-ax.set_ylabel('Results')
-
-ax2.set_title('Negative results per day')
-ax2.set_ylabel('Results')
-
-ax3.set_title('Total results per day')
-ax3.set_ylabel('Results')
-ax3.set_xlabel(daylabel)
-
-fig.suptitle('Positive test rates have remained relatively constant while total tests grow,\n'
-             'suggesting testing criteria are stable', 
-             fontsize=16, fontname='Roboto', fontweight='light',
-             x=0.05, ha='left', va='top')
-
-ax3.annotate('Data notes:\n'
-             '• DC on Apr 1 reported zero neg. cases, and \n  on Apr 2 neg. count doubled, so we adjusted each\n  day to be half the Apr 3 number.',
-              xy=(0.05,0.1), xycoords='figure fraction')
-
-doSave = True
-if doSave:
-    fig.savefig('./fig-output/testing-%s.png'%datestr, 
-            dpi=300, bbox_inches='tight', pad_inches=0.5)
-            #bbox_inches=r_[0,0,10,15])#, 
-
-
-```
-
-### Doubling time plot
+## refactor the prep code for the doubling-time plot
 
 ```python
 def double_time(st, doubles):
@@ -333,9 +140,14 @@ def find_days(df):
     df = df.reset_index()
     df = df.rename(columns = {'index': 'day'})
     return df
-```
 
-```python
+# run the plot_state data collector
+df = ctDf.copy()
+for st in ['DC', 'MD', 'VA', 'NY']:
+    df, paramsC = cvd.plot_state(df, st, paramsC, ax=None, do_plot=False)
+
+
+# manip
 doubles = pd.DataFrame(columns = {'DC', 'VA', 'MD'})
 pcts = pd.DataFrame(columns = {'DC', 'VA', 'MD'})
 
@@ -347,45 +159,23 @@ doubles = find_days(doubles)
 pcts = find_days(pcts)
 
 dtV = paramsC.loc['DC', 'plot_data']['dtV']
-```
 
-```python
+# pad with NAs
 doubles = doubles.replace([np.inf, -np.inf], np.nan)
 for st in ['DC', 'MD', 'VA']:
     doubles[st].fillna((doubles[st].mean()), inplace=True)
-```
 
-```python
-import pytoolsMH as ptMH
+# smooth
 for st in ['DC', 'MD', 'VA']:
     doubles[st+'_smooth'] = ptMH.math.smooth_lowess(doubles[st], x=None, span=7, robust=False, iter=None, axis=-1)
 ```
 
-```python
-fig = plt.figure(figsize=r_[4, 3], dpi=100)
-for st in ['DC', 'MD', 'VA']:
-    plt.plot(doubles['day'], doubles[st], alpha = 0.8, lw = 0.75)
-    plt.legend()
-plt.plot(doubles['day'], doubles['DC_smooth'], label = 'DC', lw = 2.5, color = '#2678B2')
-plt.plot(doubles['day'], doubles['VA_smooth'], label = 'VA', lw = 2.5, color = '#339F34')
-plt.plot(doubles['day'], doubles['MD_smooth'], label = 'MD', lw = 2.5, color = '#FD7F28')
-plt.legend()
-plt.xlabel('days since first test')
-plt.ylabel('time for cases to double (days)')
+## make doubling time plot, export to plot.ly html 
 
-fig.savefig('./fig-output/doubling-%s.png'%datestr, 
-            dpi=300, bbox_inches='tight', pad_inches=0.5)
-
-"""plt.axvline(x = 30, alpha = 0.5)
-plt.axvline(x = 23, alpha = 0.5)
-plt.axvline(x = 16, alpha = 0.5)
-plt.axvline(x = 9, alpha = 0.5)"""
-```
-
-## MH figure
+wow this works?
 
 ```python
-doSave = True
+
 
 for st in ['DC', 'MD', 'VA']:
     doubles[st+'_smooth'] = ptMH.math.smooth_lowess(doubles[st], x=None, span=8, robust=False, iter=None, axis=-1)
@@ -420,7 +210,7 @@ plt.grid(False, which='both', axis='x')
 sns.despine(left=True, right=True, top=False, bottom=False)
 
 x_dates = dtV.dt.strftime('%b %-d')
-#xt = r_[5:len(x_dates):7]
+xt = r_[5:len(x_dates):7]
 ax.set_xticks(xt-1)
 ax.set_ylim([0,ax.get_ylim()[-1]])
 ax.tick_params(axis='x', length=5, bottom=True, direction='out', width=0.25)
@@ -436,12 +226,30 @@ fig.suptitle('Tue Apr 7: Growth is slowing in Washington, DC area',
 
 
 
+plotly.offline.plot_mpl(fig, filename='./fig-output/test-plotly.html', include_plotlyjs='cdn', auto_open=False)
 
+#if doSave:
+#    fig.savefig('./fig-output/doubling-MH-%s.png'%datestr, facecolor=fig.get_facecolor(),
+#            dpi=300, bbox_inches='tight', pad_inches=0.5)
+```
 
-if doSave:
-    fig.savefig('./fig-output/doubling-MH-%s.png'%datestr, facecolor=fig.get_facecolor(),
-            dpi=300, bbox_inches='tight', pad_inches=0.5)
+```python
 
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
 
 ```
 
