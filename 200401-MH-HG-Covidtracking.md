@@ -25,10 +25,6 @@ jupyter:
   
 
 ```python
-
-```
-
-```python
 %reload_ext autoreload
 %autoreload 2
 
@@ -410,7 +406,7 @@ plt.grid(False, which='both', axis='x')
 sns.despine(left=True, right=True, top=False, bottom=False)
 
 x_dates = dtV.dt.strftime('%b %-d')
-xt = r_[5:len(x_dates):7]
+xt = r_[len(x_dates)-1:0:-7][::-1]
 ax.set_xticks(xt-1)
 ax.set_ylim([0,ax.get_ylim()[-1]])
 ax.tick_params(axis='x', length=5, bottom=True, direction='out', width=0.25)
@@ -420,21 +416,30 @@ ax.set_xticklabels(x_dates[::-1].iloc[xt], rotation=60)
 
 ax.annotate(tCredStr, fontsize=8, va='bottom', ha='right',
               xy=(0.98,0.01), xycoords='axes fraction')
-fig.suptitle('Thus Apr 9: Growth gradually slowing in Washington, DC area',
+
+tStr = datetime.date.today().strftime('%a %B %-d')
+fig.suptitle('%s: Growth gradually slowing in Washington, DC area' % tStr,
              fontsize=16, fontname='Roboto', fontweight='light',
              x=0.05, y=1.01, ha='left', va='top')
 
 
-
+ax.annotate('improvement\n(slower growth)', xy=(0.5,0.8), xycoords='figure fraction',
+            textcoords='offset points', xytext=(0,-60),
+            arrowprops=dict(arrowstyle='-|>,head_width=0.4,head_length=0.8', connectionstyle='arc3', color='0.4', lw=1),
+            color='0.3', ha='center')
 
 
 if doSave:
     fig.savefig('./fig-output/doubling-MH-%s.png'%datestr, facecolor=fig.get_facecolor(),
             dpi=300, bbox_inches='tight', pad_inches=0.5)
 
-
 ```
 
 ```python
+r_[10:1:-7]
+len(x_dates)
+```
 
+```python
+r_[len(x_dates):0:-7]
 ```

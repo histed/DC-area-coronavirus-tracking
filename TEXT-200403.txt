@@ -13,12 +13,32 @@ Done:
 
 -------------
 
-Update for Wed Apr 8: while coronavirus cases are growing in the DC/mid-Atlantic area, there was a bit of a speed-up blip today.
+Update for Thu Apr 9: Coronavirus growth still slowing in DC/mid-Atlantic area. Yesterday's speed-up was temporary, as guessed.
 
-Looks like there were some changes in test reporting toay (see below).  
+Case *count* is surely wrong, given testing limits.
+But cases are useful to measure *growth* (doubling time).
+Testing stats below.
 
-These plots w/ 
-@hannah_goldbach
+w/@hannah_goldbach
+
+
+
+It looks like rates of positive tests may be going up over the last few days.  That isn't great news for the slowing of case numbers.  If, as cases grow, tests are increasingly used on those more likely to have COVID19, you'd see an increase in pos tests (and slowing growth).
+
+
+@isfBob hasn't posted Apr 9 plots yet, but here are his Apr 8 per-capita plots for US states.  DC (the District itself) isn't doing great-many total cases per-capita. I worry about density and inequality causing DC to do not well over next few weeks.
+/end
+https://twitter.com/isfBob/status/1248071363501240320
+
+-------------
+
+Update for Thu Apr 9: Coronavirus growth still slowing in DC/mid-Atlantic area. Yesterday's speed-up was temporary, as guessed.
+
+Case count is surely wrong, given testing limits. 
+But cases are useful to measure _growth_ (doubling time).
+Testing stats below.
+
+w/@hannah_goldbach
 
 -
 
