@@ -99,7 +99,7 @@ print(tCredStr)
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
-xlim = r_[0,35]
+xlim = r_[0,37]
 todayx = 0 #26
 
 # big plot - states
@@ -117,7 +117,7 @@ ax.set_ylabel('Total cases')
 cvd.plot_guide_lines(ax)
 
 # inset
-ylim = r_[350, 2300]*2.3 #ADJUST YLIM TO FIT 
+ylim = r_[450, 3200]*2.3 #ADJUST YLIM TO FIT 
 axins = cvd.inset(ctDf, paramsC, ax, ylim, is_inset=True)
 
 #case doubling lines 
@@ -127,7 +127,7 @@ cvd.case_anno_inset_double(xs, axins, paramsC) #might have to adjust in scropt
 
 #add arrow
 tStr = datetime.date.today().strftime('%B %-d')
-ax.annotate(tStr, xy=(33,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
+ax.annotate(tStr, xy=(35,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'),
             color='0.3', ha='center')
 
@@ -156,7 +156,7 @@ paramsD = paramsC.copy()
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
-xlim = r_[0,35]
+xlim = r_[0,37]
 
 todayx = 0 #26
 
@@ -183,7 +183,7 @@ ylim = r_[9, 50]*1.3 #ADJUST YLIM TO FIT  - get aspect ratio right
 
 #add arrow
 tStr = datetime.date.today().strftime('%B %-d')
-ax.annotate(tStr, xy=(31, 1), xycoords='data', xytext=(0,-30), textcoords='offset points',
+ax.annotate(tStr, xy=(35, 1), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
             color='0.3', ha='center')
 
@@ -420,7 +420,7 @@ ax.set_xticklabels(x_dates[::-1].iloc[xt], rotation=60)
 
 ax.annotate(tCredStr, fontsize=8, va='bottom', ha='right',
               xy=(0.98,0.01), xycoords='axes fraction')
-fig.suptitle('Wed Apr 8: Growth gradually slowing in Washington, DC area',
+fig.suptitle('Thus Apr 9: Growth gradually slowing in Washington, DC area',
              fontsize=16, fontname='Roboto', fontweight='light',
              x=0.05, y=1.01, ha='left', va='top')
 
@@ -432,5 +432,9 @@ if doSave:
     fig.savefig('./fig-output/doubling-MH-%s.png'%datestr, facecolor=fig.get_facecolor(),
             dpi=300, bbox_inches='tight', pad_inches=0.5)
 
+
+```
+
+```python
 
 ```
