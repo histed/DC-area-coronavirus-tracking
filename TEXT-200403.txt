@@ -11,6 +11,20 @@ Done:
 - [X] Cut some Alsos.
 - [X] Automate the date text now in Illustrator
 
+
+Update for Fri Apr 10: Coronavirus growth continues to slow in DC area/mid-Atlantic.
+
+Case *count* is surely wrong, given testing limits.
+But cases are useful to measure *growth* (doubling time).
+Testing stats below.
+
+w/@hannah_goldbach
+
+It looks like positive test rates may be going up. (Mean ~15% a few days ago, now >20%). Not great news for slowing of cases.
+Why? If tests are increasingly used on those more likely to have COVID19, you'd see an increase in pos tests (which would artificially slow growth).
+
+Cases per capita  https://twitter.com/isfBob/status/1248428331176833031
+
 -------------
 
 Update for Thu Apr 9: Coronavirus growth still slowing in DC/mid-Atlantic area. Yesterday's speed-up was temporary, as guessed.
