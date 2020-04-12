@@ -15,6 +15,9 @@ jupyter:
 
 # Load covidtracking data and make some plots
 
+- 4/12 todo
+  - make the doubling time plot for deaths
+  
 - 4/6 todo
   - set arrow location automatically (xmax)
   
@@ -92,17 +95,19 @@ print(tCredStr)
 ```
 
 ```python
+doInset = False
+
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
-
-xlim = r_[0,37]
-todayx = 0 #26
 
 # big plot - states
 df = ctDf.copy()
 for st in ['DC', 'MD', 'VA', 'NY']:
     df, paramsC = cvd.plot_state(df, st, paramsC, ax, False)
 
+xmax = np.max(paramsC.loc['DC','plot_data']['xs'])
+xlim = r_[0,xmax+3]
+    
 # big plot fixup
 cvd.fixups(ax)
 #ADJUST AXIS LIMS TO FIT 
@@ -113,8 +118,9 @@ ax.set_ylabel('Total cases')
 cvd.plot_guide_lines(ax)
 
 # inset
-ylim = r_[450, 3200]*2.3 #ADJUST YLIM TO FIT 
-axins = cvd.inset(ctDf, paramsC, ax, ylim, is_inset=True)
+if doInset:
+    ylim = r_[450, 3200]*2.3 #ADJUST YLIM TO FIT 
+    axins = cvd.inset(ctDf, paramsC, ax, ylim, is_inset=True)
 
 #case doubling lines 
 xs = r_[1,10] #ADJUST COORDS AS CASES CLIMB
@@ -123,15 +129,17 @@ cvd.case_anno_inset_double(xs, axins, paramsC) #might have to adjust in scropt
 
 #add arrow
 tStr = datetime.date.today().strftime('%B %-d')
-ax.annotate(tStr, xy=(35,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
+ax.annotate(tStr, xy=(xmax,10), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'),
             color='0.3', ha='center')
 
 ## credit string
-#ax.annotate(tCredStr, xy=(0.9,0.1), xycoords='axes fraction')
+ax.annotate(tCredStr, xy=(0.98,0.02), xycoords='axes fraction', ha='right', fontsize=8, color='0.3')
+fig.suptitle(f"{datetime.date.today().strftime('%a %B %-d')}: \n"
+             'Cumulative cases, mid-Atlantic (DC, MD, VA)',
+             fontsize=16, fontname='Roboto', fontweight='light', 
+             x=0.05, y=0.92, ha='left', va='bottom')
 
-# save fig 
-fig.tight_layout()
 fig.savefig('./fig-output/ct-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_inches=0.5)
             #bbox_inches=r_[0,0,10,15])#, 
 ```
@@ -151,10 +159,6 @@ paramsD = paramsC.copy()
 ```python
 sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
-
-xlim = r_[0,37]
-
-todayx = 0 #26
 
 df = ctDf.copy()
 for st in ['DC', 'MD', 'VA', 'NY']:
@@ -179,11 +183,17 @@ ylim = r_[9, 50]*1.3 #ADJUST YLIM TO FIT  - get aspect ratio right
 
 #add arrow
 tStr = datetime.date.today().strftime('%B %-d')
-ax.annotate(tStr, xy=(35, 1), xycoords='data', xytext=(0,-30), textcoords='offset points',
+ax.annotate(tStr, xy=(xmax, 1), xycoords='data', xytext=(0,-30), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
             color='0.3', ha='center')
 
-fig.tight_layout()
+ax.annotate(tCredStr, xy=(0.98,0.02), xycoords='axes fraction', ha='right', fontsize=8, color='0.3')
+fig.suptitle(f"{datetime.date.today().strftime('%a %B %-d')}: \n"
+             'Cumulative deaths, mid-Atlantic (DC, MD, VA)',
+             fontsize=16, fontname='Roboto', fontweight='light', 
+             x=0.05, y=0.92, ha='left', va='bottom')
+
+
 fig.savefig('./fig-output/dt-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_inches=0.5)
             #bbox_inches=r_[0,0,10,15])#, 
 ```
@@ -208,7 +218,7 @@ daylabel = f'Days - last is {tDStr}'
 fig = plt.figure(figsize=r_[1,0.75]*[2,3]*5, dpi=100)
 gs = mpl.gridspec.GridSpec(3,2)
 
-ax = plt.subplot(gs[0,0])
+ax = plt.subplot(gs[0:2,0])
 datD = {}
 for state in ['DC', 'MD', 'VA']:
     desIx = ctDf.state == state
@@ -239,14 +249,14 @@ meanNDay = 7
 desNs = r_[maxN-meanNDay:maxN]
 tV = np.hstack([datD[x].pctPos[desNs] for x in datD.keys()])
 tM = np.mean(tV)
-plt.plot(desNs, tM+desNs*0, color='k', lw=5, ls='-', alpha=1)
+plt.plot(desNs, tM+desNs*0, color='k', lw=5, ls='-', alpha=0.5)
 # anno it
 ax.annotate('mean\npos test rates,\nlast %d days'%meanNDay, 
-            xy=(desNs[2],tM), xycoords='data', xytext=(-50,-120), textcoords='offset points',
+            xy=(desNs[2],tM), xycoords='data', xytext=(-50,+50), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0.1', color='k'), 
             color='0.3', ha='center')
 ax.annotate('no neg tests\nreported by MD here', 
-            xy=(16,100), xycoords='data', xytext=(-10,-30), textcoords='offset points',
+            xy=(16,100), xycoords='data', xytext=(-10,-60), textcoords='offset points',
             arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'), 
             color='0.3', ha='center')
 
@@ -270,8 +280,7 @@ ax3.set_title('Total results per day')
 ax3.set_ylabel('Results')
 ax3.set_xlabel(daylabel)
 
-tStr = datetime.date.today().strftime('%a %B %-d')
-fig.suptitle(f'{tStr}: \n'
+fig.suptitle(f"{datetime.date.today().strftime('%a %B %-d')}: \n"
              'Test rates, mid-Atlantic (DC, MD, VA)',
              fontsize=16, fontname='Roboto', fontweight='light', 
              x=0.05, y=0.92, ha='left', va='bottom')
@@ -346,27 +355,6 @@ for st in ['DC', 'MD', 'VA']:
     doubles[st+'_smooth'] = ptMH.math.smooth_lowess(doubles[st], x=None, span=7, robust=False, iter=None, axis=-1)
 ```
 
-```python
-fig = plt.figure(figsize=r_[4, 3], dpi=100)
-for st in ['DC', 'MD', 'VA']:
-    plt.plot(doubles['day'], doubles[st], alpha = 0.8, lw = 0.75)
-    plt.legend()
-plt.plot(doubles['day'], doubles['DC_smooth'], label = 'DC', lw = 2.5, color = '#2678B2')
-plt.plot(doubles['day'], doubles['VA_smooth'], label = 'VA', lw = 2.5, color = '#339F34')
-plt.plot(doubles['day'], doubles['MD_smooth'], label = 'MD', lw = 2.5, color = '#FD7F28')
-plt.legend()
-plt.xlabel('days since first test')
-plt.ylabel('time for cases to double (days)')
-
-fig.savefig('./fig-output/doubling-%s.png'%datestr, 
-            dpi=300, bbox_inches='tight', pad_inches=0.5)
-
-"""plt.axvline(x = 30, alpha = 0.5)
-plt.axvline(x = 23, alpha = 0.5)
-plt.axvline(x = 16, alpha = 0.5)
-plt.axvline(x = 9, alpha = 0.5)"""
-```
-
 ## MH figure
 
 ```python
@@ -378,7 +366,7 @@ for st in ['DC', 'MD', 'VA']:
 sns.set_style('whitegrid')
 fig = plt.figure(figsize=r_[4, 3]*1.5, dpi=100)
 ax = plt.subplot()
-ax.set_facecolor('#f6fcfd')
+ax.set_facecolor('#f7fdfe')
 
 
 for (iS,st) in enumerate(['DC', 'MD', 'VA']):
@@ -418,7 +406,7 @@ ax.annotate(tCredStr, fontsize=8, va='bottom', ha='right',
               xy=(0.98,0.01), xycoords='axes fraction')
 
 tStr = datetime.date.today().strftime('%a %B %-d')
-fig.suptitle('%s: Growth gradually slowing in Washington, DC area' % tStr,
+fig.suptitle('%s: Case growth gradually slowing in Washington, DC area' % tStr,
              fontsize=16, fontname='Roboto', fontweight='light',
              x=0.05, y=1.01, ha='left', va='top')
 
