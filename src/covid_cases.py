@@ -21,6 +21,12 @@ r_ = np.r_
 
 todayx = 0
 
+def get_cred_str():
+    """from today"""
+    tDStr = datetime.date.today().strftime('%b %-d 2020')
+    tCredStr = 'Updated %s, 20:00 EDT\n  data: http://covidtracking.com\nGraphic: Hannah Goldbach, Mark Histed\n  @hannah_goldbach @histedlab' % tDStr
+    return(tCredStr)
+
 def plot_state(df, state, params, ax, is_inset=False, is_cases=True, do_plot=True):
     """
     Params:
@@ -138,58 +144,121 @@ def case_anno_inset_double(xs, ax, params):
     
 
 
-# class PlotDoubling:
+class PlotDoubling:
 
-#     def __init__(self, stateList=['DC','VA','MD'], paramsC=None):
-#         self.params = paramsC
-#         self.stateList = stateList
+    def __init__(self, stateList=['DC','VA','MD'], params=None, smoothSpan=7):
+        """Do all data manip in __init__ - data is in paramsC[plot_data]"""
+        
+        self.params = params.copy()
+        self.stateList = stateList
 
-#         self.doubles = pd.DataFrame(columns=stateList)
-#         self.pcts = pd.DataFrame(columns=stateList)
-#         for st in self.stateList:
-#             self.doubles = self._double_time(st, self.doubles)
-#             self.pcts = self._pct_rise(st, self.pcts)
+        self.doubles = pd.DataFrame(columns={s for s in stateList})  # depends on a dict with no values... ??
+        self.pcts = pd.DataFrame(columns={s for s in stateList})
 
-#         self.doubles = find_days(self.doubles)
-#         self.pcts = find_days(self.pcts)
+        for st in self.stateList:
+            # doubling time
+            dD = self.params.loc[st, 'plot_data']
+            slope0 = np.diff(np.log10(dD['ys'].to_numpy()))
+            double_time = -np.log10(2)/slope0
+            self.doubles[st] = double_time
 
-#         doubles = doubles.replace([np.inf, -np.inf], np.nan)
-#         for st in self.stateList:
-#             self.doubles[st].fillna((self.doubles[st].mean()), inplace=True)
+            # pct rise
+            pctsTemp = []
+            for tSt in np.arange(0, len(dD['xs'])-2, 1):
+                ns = r_[0:2]+tSt
+                x0 = np.mean(dD['xs'][ns])
+                y0 = np.mean(dD['ys'].iloc[ns])
+                slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
+                pct_rise = (dD['ys'].iloc[ns[0]]/dD['ys'].iloc[ns[1]] * 100) - 100
+                pctsTemp.append(pct_rise)
+            self.pcts[st] = pctsTemp
 
+        # reindex with helper below
+        self.doubles = self._find_days(self.doubles)
+        self.pcts = self._find_days(self.pcts)
+
+        # do some na/nan adjustment
+        self.doubles = self.doubles.replace([np.inf, -np.inf], np.nan)
+        self.params['nanIx'] = [[]] * len(self.params)
+        for st in self.stateList:
+            nanIx = np.isnan(self.doubles[st].to_numpy())
+            self.params['nanIx'][st] = [nanIx]
+            self.doubles[st].fillna((self.doubles[st].mean()), inplace=True)
+
+        # smoothing
+        for st in self.stateList:
+            tV =ptMH.math.smooth_lowess(self.doubles[st], x=None, span=smoothSpan, robust=False, iter=None, axis=-1)
+            self.doubles[st+'_smooth'] = tV
             
-#     def _double_time(self, st, doubles): 
-#         dD = self.params.loc[st, 'plot_data']
-#         doublesTemp = []
-#         pctsTemp = []
-#         for tSt in np.arange(0, len(dD['xs'])-2, 1):
-#             ns = r_[0:2]+tSt
-#             x0 = np.mean(dD['xs'][ns])
-#             y0 = np.mean(dD['ys'].iloc[ns])
-#             slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
-#             double_time = np.log10(2)/slope0
-#             doublesTemp.append(double_time)
-#         doubles[st] = doublesTemp
-#         return doubles 
+    def _find_days(self, df): 
+        df = df.reindex(index=df.index[::-1])
+        df = df.reset_index(drop = True)
+        df = df.reset_index()
+        df = df.rename(columns = {'index': 'day'})
+        return df
 
-    
-#     def _pct_rise(self, st, pcts):
-#         dD = self.params.loc[st, 'plot_data']
-#         pctsTemp = []
-#         for tSt in np.arange(0, len(dD['xs'])-2, 1):
-#             ns = r_[0:2]+tSt
-#             x0 = np.mean(dD['xs'][ns])
-#             y0 = np.mean(dD['ys'].iloc[ns])
-#             slope0 = np.log10(dD['ys'].iloc[ns[0]])-np.log10(dD['ys'].iloc[ns[1]])
-#             pct_rise = (dD['ys'].iloc[ns[0]]/dD['ys'].iloc[ns[1]] * 100) - 100
-#             pctsTemp.append(pct_rise)
-#         pcts[st] = pctsTemp
-#         return pcts
 
-    
-#     def find_days(df): 
-#         df = df.reindex(index=df.index[::-1])
-#         df = df.reset_index(drop = True)
-#         df = df.reset_index()
-#         df = df.rename(columns = {'index': 'day'})
-#         return df
+    def plot_doubling(self, doSave=True, title_str='', ylim=None, cred_left=False, yname='cases'):
+        dtV = self.params.loc['DC', 'plot_data']['dtV']
+        datestr = datetime.datetime.now().strftime('%y%m%d')
+        
+        sns.set_style('whitegrid')
+        fig = plt.figure(figsize=r_[4, 3]*1.5, dpi=100)
+        ax = plt.subplot()
+        ax.set_facecolor('#f7fdfe')
+
+        for (iS,st) in enumerate(self.stateList):
+            nanIx = self.params.loc[st, 'nanIx'][0]
+            ys0 = self.doubles[st]; ys0[nanIx] = np.nan
+            pH, = plt.plot(self.doubles['day'], ys0, alpha = 0.8, lw = 0.75)
+            ys0 = self.doubles[st+'_smooth']; ys0[nanIx] = np.nan
+            plt.plot(self.doubles['day'], ys0, label = st, lw = 2.5, color = pH.get_color())
+            last_double = self.doubles[st+'_smooth'].iloc[-1]
+            self.params.loc[st, 'last_double'] = last_double
+            self.params.loc[st, 'color'] = pH.get_color()
+
+        # last_double annotate    
+        for (iS,st) in enumerate(self.stateList):
+            last_double = self.params.loc[st, 'last_double']
+            xy = (1.05, 0.65-iS*0.08)
+            tStr = f'{st}: {last_double:.2g}'
+            if iS == 0:
+                tStr = tStr + ' days'
+            ax.annotate(tStr, xy=xy, 
+                        xycoords='axes fraction', color=self.params.loc[st, 'color'], ha='left',
+                        fontweight='bold', fontsize=14)
+
+        plt.ylabel('doubling time for %s (days)'%yname, fontsize=12)
+
+        plt.grid(False, which='both', axis='x')
+        sns.despine(left=True, right=True, top=False, bottom=False)
+
+        x_dates = dtV.dt.strftime('%b %-d')
+        xt = r_[len(x_dates)-1:0:-7][::-1]
+        ax.set_xticks(xt-1)
+        ax.set_ylim([0,ax.get_ylim()[-1]])
+        if ylim is not None:
+            ax.set_ylim(ylim)
+        ax.tick_params(axis='x', length=5, bottom=True, direction='out', width=0.25)
+        ax.set_xticklabels(x_dates[::-1].iloc[xt], rotation=60)
+
+        if cred_left == True:
+            ap0 = {'ha': 'left', 'xy': (0.02,0.01)}
+        else:
+            ap0 = {'ha': 'right', 'xy': (0.98, 0.01) }
+        ax.annotate(get_cred_str(), fontsize=8, va='bottom', xycoords='axes fraction', **ap0)
+
+        tStr = datetime.date.today().strftime('%a %B %-d')
+        fig.suptitle('%s: %s' % (tStr, title_str),
+                     fontsize=16, fontname='Roboto', fontweight='light',
+                     x=0.05, y=1.01, ha='left', va='top')
+
+        ax.annotate('improvement\n(slower growth)', xy=(0.5,0.8), xycoords='figure fraction',
+                    textcoords='offset points', xytext=(0,-60),
+                    arrowprops=dict(arrowstyle='-|>,head_width=0.4,head_length=0.8', connectionstyle='arc3', color='0.4', lw=1),
+                    color='0.3', ha='center')
+
+        if doSave:
+            fig.savefig('./fig-output/doubling-MH-%s-%s.png'%(yname, datestr), facecolor=fig.get_facecolor(),
+                    dpi=300, bbox_inches='tight', pad_inches=0.5)
+
