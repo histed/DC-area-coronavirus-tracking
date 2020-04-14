@@ -22,15 +22,15 @@ jupyter:
 ----------
 
 - 4/12 todo
-  - make the doubling time plot for deaths
+  - [X] make the doubling time plot for deaths
   
 - 4/6 todo
-  - set arrow location automatically (xmax)
+  - [X] set arrow location automatically (xmax)
   
 - 4/5 todo
   - [X] hannah refactored code, I adapted with recent updates
   - [X] run code tonight
-  - [ ] fix death inset not being annotated
+  - [X] fix death inset not being annotated
   
 <!-- #endregion -->
 
@@ -312,7 +312,7 @@ if doSave:
 ```python
 plotd = cvd.PlotDoubling(params=paramsC)
 
-plotd.plot_doubling(title_str='Case growth (reported) gradually slowing \n  in Washington, DC area', ylim=(0,15))
+plotd.plot_doubling(title_str='Reported case growth slowing \n  in Washington, DC area', ylim=(0,15))
 
 
 
@@ -324,5 +324,21 @@ plotd = cvd.PlotDoubling(params=paramsD, smoothSpan=13)
 plotd.plot_doubling(title_str='Doubling time for reported deaths.\n  Not really enough data to draw inferences yet',
                     cred_left=True, ylim=[-1.9,16], yname='deaths')
 
+
+```
+
+```python
+plotd = cvd.PlotDoubling(params=paramsC, smoothSpan=13)
+
+plotd.fig_increment(doSave=True, yname='cases', title_str='Cases reported per day, Mid-Atlantic')
+```
+
+```python
+plotd = cvd.PlotDoubling(params=paramsD, smoothSpan=13)
+
+plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day, Mid-Atlantic')
+```
+
+```python
 
 ```

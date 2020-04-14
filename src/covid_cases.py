@@ -144,6 +144,7 @@ def case_anno_inset_double(xs, ax, params):
     
 
 
+
 class PlotDoubling:
 
     def __init__(self, stateList=['DC','VA','MD'], params=None, smoothSpan=7):
@@ -154,12 +155,14 @@ class PlotDoubling:
 
         self.doubles = pd.DataFrame(columns={s for s in stateList})  # depends on a dict with no values... ??
         self.pcts = pd.DataFrame(columns={s for s in stateList})
+        self.increment = {}
 
         for st in self.stateList:
             # doubling time
             dD = self.params.loc[st, 'plot_data']
             slope0 = np.diff(np.log10(dD['ys'].to_numpy()))
             double_time = -np.log10(2)/slope0
+            self.increment[st] = -np.diff(dD['ys'].to_numpy())
             self.doubles[st] = double_time
 
             # pct rise
@@ -198,6 +201,67 @@ class PlotDoubling:
         return df
 
 
+    def fig_increment(self, doSave=True, title_str='', ylim=None, cred_left=False, yname='cases'):    
+        dtV = self.params.loc['DC', 'plot_data']['dtV']
+        datestr = datetime.datetime.now().strftime('%y%m%d')
+
+        sns.set_style('whitegrid')
+        nRows = 3
+        fig = plt.figure(figsize=r_[4, 3*nRows]*0.9, dpi=100)
+        gs = mpl.gridspec.GridSpec(nRows,1)
+
+        for (iS,st) in enumerate(self.stateList):
+            ax = plt.subplot(gs[iS])
+            ax.set_facecolor('#fffdfe')
+
+            nanIx = self.params.loc[st, 'nanIx'][0]
+            ys0 = self.increment[st][::-1]
+            ys0[ys0<0] = 0
+            plt.bar(self.doubles['day'], ys0, color=self.params.loc[st, 'color'])
+            #ys0[nanIx] = np.nan
+            #pH, = plt.plot(self.doubles['day'], ys0, alpha = 0.8, lw = 0.75)
+            #ys0 = self.doubles[st+'_smooth']; ys0[nanIx] = np.nan
+            #plt.plot(self.doubles['day'], ys0, label = st, lw = 2.5, color = pH.get_color())
+            #ast_double = self.doubles[st+'_smooth'].iloc[-1]
+            #self.params.loc[st, 'last_double'] = last_double
+            #self.params.loc[st, 'color'] = pH.get_color()
+        
+            plt.grid(False, which='both', axis='x')
+            sns.despine(left=True, right=True, top=True, bottom=False)
+
+            # date labels
+            x_dates = dtV.dt.strftime('%b %-d')
+            xt = r_[len(x_dates)-1:0:-7][::-1]
+            ax.set_xticks(xt-1)
+            ax.set_ylim([0,ax.get_ylim()[-1]])
+            if ylim is not None:
+                ax.set_ylim(ylim)
+            ax.tick_params(axis='x', length=5, bottom=True, direction='out', width=0.25)
+            ax.set_xticklabels(x_dates[::-1].iloc[xt], rotation=60)
+
+            # ax fixups
+            if iS == 1:
+                ax.set_ylabel('number of %s per day'%yname, fontsize=12)
+
+
+            ax.annotate(self.params.loc[st, 'fullname'], xy=(0.02,0.98), xycoords='axes fraction',
+                        ha='left', va='top', fontsize=14, fontweight='bold')
+
+        plt.tight_layout(h_pad=2)
+        
+        ap0 = {'ha': 'left', 'xy': (1.2, 0.02) }
+        ax.annotate(get_cred_str(), fontsize=8, va='bottom', xycoords='axes fraction', **ap0)
+
+        tStr = datetime.date.today().strftime('%a %B %-d')
+        fig.suptitle('%s: %s' % (tStr, title_str),
+                     fontsize=16, fontname='Roboto', fontweight='light',
+                     x=0.05, y=1.01, ha='left', va='bottom')
+
+        if doSave:
+            fig.savefig('./fig-output/increment-MH-%s-%s.png'%(yname, datestr), facecolor=fig.get_facecolor(),
+                    dpi=300, bbox_inches='tight', pad_inches=0.5)
+        
+        
     def plot_doubling(self, doSave=True, title_str='', ylim=None, cred_left=False, yname='cases'):
         dtV = self.params.loc['DC', 'plot_data']['dtV']
         datestr = datetime.datetime.now().strftime('%y%m%d')
@@ -233,6 +297,7 @@ class PlotDoubling:
         plt.grid(False, which='both', axis='x')
         sns.despine(left=True, right=True, top=False, bottom=False)
 
+        # date labels
         x_dates = dtV.dt.strftime('%b %-d')
         xt = r_[len(x_dates)-1:0:-7][::-1]
         ax.set_xticks(xt-1)
