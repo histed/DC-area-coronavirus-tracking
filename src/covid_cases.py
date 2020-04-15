@@ -12,10 +12,14 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import requests
 import json
+from argparse import Namespace
 import datetime, dateutil.parser
-import pytoolsMH as ptMH
 
-mpl.rc('pdf', fonttype=42) # embed fonts on pdf output 
+
+mpl.rc('pdf', fonttype=42) # embed fonts on pdf output
+sns.set_palette('deep')
+sns.set_palette('tab10')
+#sns.set_palette('default')
 
 r_ = np.r_
 
@@ -29,6 +33,7 @@ def get_cred_str():
 
 def plot_state(df, state, params, ax, is_inset=False, is_cases=True, do_plot=True):
     """
+    Also computes the params['plot_data'] field
     Params:
         is_cases: True means plot cases, False means plot deaths
     Returns:
@@ -121,7 +126,8 @@ def inset(df, params, ax,  ylim, is_inset=True, is_cases=True):
     axins.set_yscale('log')
     axins.set_ylim(ylim)
     return axins
-    
+
+
 def case_anno_inset_double(xs, ax, params):
     # put doubling time on inset axes
     for st in ['DC', 'MD', 'VA']:
@@ -141,17 +147,39 @@ def case_anno_inset_double(xs, ax, params):
             ax.annotate(tStr, xy=(x0,y0), va='bottom', ha='right', color=params.loc[st,'color'],
                           xytext=(-1,2), textcoords='offset points')
 
-    
 
+def sub_date_xlabels(params, ax, ylim=None, dtV=None):
+    """
+    Args:
+        params: only used if dtV is not None
+        ax:
+        ylim:
+        dtV:
+
+    Returns:
+
+    """
+    if dtV is None:
+        dtV = params.loc['DC', 'plot_data']['dtV']
+
+    x_dates = dtV.dt.strftime('%b %-d')
+    xt = r_[len(x_dates) - 1:0:-7][::-1]
+    ax.set_xticks(xt - 1)
+    ax.set_ylim([0, ax.get_ylim()[-1]])
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    ax.tick_params(axis='x', length=5, bottom=True, direction='out', width=0.25)
+    ax.set_xticklabels(x_dates[::-1].iloc[xt], rotation=60)
 
 
 class PlotDoubling:
 
-    def __init__(self, stateList=['DC','VA','MD'], params=None, smoothSpan=7):
+    def __init__(self, stateList=['DC','MD','VA'], params=None, smoothSpan=7):
         """Do all data manip in __init__ - data is in paramsC[plot_data]"""
         
         self.params = params.copy()
         self.stateList = stateList
+        sns.set_palette('tab10')  # mpl default
 
         self.doubles = pd.DataFrame(columns={s for s in stateList})  # depends on a dict with no values... ??
         self.pcts = pd.DataFrame(columns={s for s in stateList})
@@ -201,8 +229,9 @@ class PlotDoubling:
         return df
 
 
-    def fig_increment(self, doSave=True, title_str='', ylim=None, cred_left=False, yname='cases'):    
-        dtV = self.params.loc['DC', 'plot_data']['dtV']
+    def fig_increment(self, doSave=True, title_str='', ylim=None, cred_left=False, yname='cases'):
+        """3-panel incremental bar plot"""
+
         datestr = datetime.datetime.now().strftime('%y%m%d')
 
         sns.set_style('whitegrid')
@@ -229,15 +258,7 @@ class PlotDoubling:
             plt.grid(False, which='both', axis='x')
             sns.despine(left=True, right=True, top=True, bottom=False)
 
-            # date labels
-            x_dates = dtV.dt.strftime('%b %-d')
-            xt = r_[len(x_dates)-1:0:-7][::-1]
-            ax.set_xticks(xt-1)
-            ax.set_ylim([0,ax.get_ylim()[-1]])
-            if ylim is not None:
-                ax.set_ylim(ylim)
-            ax.tick_params(axis='x', length=5, bottom=True, direction='out', width=0.25)
-            ax.set_xticklabels(x_dates[::-1].iloc[xt], rotation=60)
+            sub_date_xlabels(self.params, ax, ylim=ylim) # date labels
 
             # ax fixups
             if iS == 1:
@@ -263,7 +284,7 @@ class PlotDoubling:
         
         
     def plot_doubling(self, doSave=True, title_str='', ylim=None, cred_left=False, yname='cases'):
-        dtV = self.params.loc['DC', 'plot_data']['dtV']
+        """Single panel doubling time plot"""
         datestr = datetime.datetime.now().strftime('%y%m%d')
         
         sns.set_style('whitegrid')
@@ -271,15 +292,16 @@ class PlotDoubling:
         ax = plt.subplot()
         ax.set_facecolor('#f7fdfe')
 
+        self.params = self.params.astype({'color': 'O'})
         for (iS,st) in enumerate(self.stateList):
             nanIx = self.params.loc[st, 'nanIx'][0]
             ys0 = self.doubles[st]; ys0[nanIx] = np.nan
-            pH, = plt.plot(self.doubles['day'], ys0, alpha = 0.8, lw = 0.75)
+            pH, = plt.plot(self.doubles['day'], ys0, alpha = 0.8, lw = 0.75, color=self.params.loc[st,'color'])
             ys0 = self.doubles[st+'_smooth']; ys0[nanIx] = np.nan
             plt.plot(self.doubles['day'], ys0, label = st, lw = 2.5, color = pH.get_color())
             last_double = self.doubles[st+'_smooth'].iloc[-1]
             self.params.loc[st, 'last_double'] = last_double
-            self.params.loc[st, 'color'] = pH.get_color()
+            #self.params.loc[st, 'color'] = pH.get_color()
 
         # last_double annotate    
         for (iS,st) in enumerate(self.stateList):
@@ -297,15 +319,7 @@ class PlotDoubling:
         plt.grid(False, which='both', axis='x')
         sns.despine(left=True, right=True, top=False, bottom=False)
 
-        # date labels
-        x_dates = dtV.dt.strftime('%b %-d')
-        xt = r_[len(x_dates)-1:0:-7][::-1]
-        ax.set_xticks(xt-1)
-        ax.set_ylim([0,ax.get_ylim()[-1]])
-        if ylim is not None:
-            ax.set_ylim(ylim)
-        ax.tick_params(axis='x', length=5, bottom=True, direction='out', width=0.25)
-        ax.set_xticklabels(x_dates[::-1].iloc[xt], rotation=60)
+        sub_date_xlabels(self.params, ax, ylim=ylim)# date labels
 
         if cred_left == True:
             ap0 = {'ha': 'left', 'xy': (0.02,0.01)}
@@ -327,3 +341,183 @@ class PlotDoubling:
             fig.savefig('./fig-output/doubling-MH-%s-%s.png'%(yname, datestr), facecolor=fig.get_facecolor(),
                     dpi=300, bbox_inches='tight', pad_inches=0.5)
 
+
+
+
+class PlotTesting:
+
+    def __init__(self, ctDf, stateL=['DC','MD','VA']):
+        """
+        Args:
+            ctDf:
+            stateL:
+        Sets:
+            self.datD
+        """
+        self.ctDf = ctDf.copy()
+
+        # iterate through states, compute incremental tests per day, save in self.datD
+        self.datD = {}
+        self.stateL = stateL
+        self.params = pd.DataFrame(index=['DC','MD','VA'],
+                                   data={'colors': sns.color_palette('deep')[:3],
+                                         'fullname': ['District of Columbia', 'Maryland', 'Virginia']})
+
+        for state in self.stateL:
+            desIx = self.ctDf.state == state
+            stDf = self.ctDf.loc[desIx, :].copy()
+            stDf.set_index('date', inplace=True, drop=False)
+
+            posV = stDf.loc[:, 'positive'][::-1]
+            negV = stDf.loc[:, 'negative'][::-1]
+            pdV = np.diff(posV)
+            ndV = np.diff(negV)
+            # manual adjustments
+            if state == 'MD':  # some errors in testing data
+                ndV[22] = np.nan
+            if state == 'DC':
+                ndV[26] = ndV[27] / 2
+                ndV[27] = ndV[27] / 2
+                # negV.loc[20200401] = negV.loc[20200402]/2
+            pctPos = pdV / (pdV + ndV) * 100
+            dtV = pd.to_datetime(stDf['date'], format='%Y%m%d')
+            xs = r_[:len(dtV)]
+
+            self.datD[state] = Namespace(posV=posV, negV=negV, pdV=pdV, ndV=ndV, pctPos=pctPos,
+                                         dtV=dtV, xs=xs)
+
+
+    def fig_multipanel_test(self, doSave=False):
+        sns.set_style('darkgrid')
+
+        tDStr = datetime.date.today().strftime('%B %-d')
+        daylabel = f'Days - last is {tDStr}'
+
+        fig = plt.figure(figsize=r_[1,0.75]*[2,3]*5, dpi=100)
+        gs = mpl.gridspec.GridSpec(3,2)
+
+        ax = plt.subplot(gs[0:2,0])
+        for state in self.stateL:
+            dd = self.datD[state]
+            plt.plot(dd.pctPos, '.-', label=state)
+
+        ax.set_title('Percent of tests positive, DC area')
+        ax.set_ylabel('Positive tests per day (%)')
+        ax.set_xlabel(daylabel)
+        # markup line
+        maxN = len(self.datD['DC'].pctPos)
+        meanNDay = 7
+        desNs = r_[maxN-meanNDay:maxN]
+        tV = np.hstack([self.datD[x].pctPos[desNs] for x in self.datD.keys()])
+        tM = np.mean(tV)
+        plt.plot(desNs, tM+desNs*0, color='k', lw=5, ls='-', alpha=0.5)
+        # anno it
+        ax.annotate('mean\npos test rates,\nlast %d days'%meanNDay,
+                    xy=(desNs[2],tM), xycoords='data', xytext=(-50,+50), textcoords='offset points',
+                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0.1', color='k'),
+                    color='0.3', ha='center')
+        ax.annotate('no neg tests\nreported by MD here',
+                    xy=(16,100), xycoords='data', xytext=(-10,-60), textcoords='offset points',
+                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3', color='0.3'),
+                    color='0.3', ha='center')
+
+        # next three panels
+        ax = plt.subplot(gs[0,1])
+        ax2 = plt.subplot(gs[1,1])
+        ax3 = plt.subplot(gs[2,1])
+        for state in ['DC', 'MD', 'VA']:
+            dd = self.datD[state]
+            display(len(dd.posV))
+            pH = ax.plot(dd.pdV, '.-', label=state)
+            pH = ax2.plot(dd.ndV, '.-', label=state)
+            pH = ax3.plot(dd.ndV+dd.pdV, '.-', label=state)
+        ax.legend()
+        ax.set_title('Positive results per day')
+        ax.set_ylabel('Results')
+
+        ax2.set_title('Negative results per day')
+        ax2.set_ylabel('Results')
+
+        ax3.set_title('Total results per day')
+        ax3.set_ylabel('Results')
+        ax3.set_xlabel(daylabel)
+
+        # suptitle and extra fig strings
+        fig.suptitle(f"{datetime.date.today().strftime('%a %B %-d')}: \n"
+                     'Test rates, mid-Atlantic (DC, MD, VA)',
+                     fontsize=16, fontname='Roboto', fontweight='light',
+                     x=0.05, y=0.92, ha='left', va='bottom')
+        ax3.annotate('Data notes:\n'
+                     '• DC on Apr 1 reported zero neg. cases, and \n  on Apr 2 neg. count doubled, so we adjusted each\n  day to be half the Apr 3 number.',
+                      xy=(0.05,0.1), xycoords='figure fraction')
+
+        if doSave:
+            fig.savefig('./fig-output/testing-%s.png'%datestr,
+                    dpi=300, bbox_inches='tight', pad_inches=0.5)
+                    #bbox_inches=r_[0,0,10,15])#,
+        return fig
+
+
+    def fig_pos_test_rate(self, ylim=None, title_str='', nbootreps=100, doSave=False):
+        sns.set_style('whitegrid')
+        fig = plt.figure(figsize=r_[3.8, 3]*r_[2,3]*1, dpi=100)
+        gs = mpl.gridspec.GridSpec(3,2)
+
+        for (iS,st) in enumerate(self.stateL):
+            ax = plt.subplot(gs[iS,0])
+            ax.set_facecolor('#f8fafb')#'#f7fdfe')
+            dD = self.datD[st]
+            ys0 = dD.pctPos
+            xs0 = dD.xs[1:]-1 # drop the first element because plotting against a difference
+            pH, = plt.plot(xs0, ys0, alpha = 0.8, lw = 0.75, color=self.params.loc[st,'colors'])
+            desIx = (xs0 > 15) & (ys0 < 100)
+            smD = { 'span': 9 }
+            ysSm = ptMH.math.smooth_lowess(ys0[desIx], xs0[desIx], **smD)
+            (ylow, yhigh, out_xs, boot_mat) = ptMH.math.smooth_lowess_bootstrap(ys0[desIx], xs0[desIx],
+                                                                                nbootreps=nbootreps, **smD)
+
+            pH2, = ax.plot(xs0[desIx], ysSm, lw=5, color=pH.get_color())
+            ax.fill_between(out_xs, ylow, yhigh, alpha=0.2, color=pH.get_color(), edgecolor=None, lw=0)
+
+            sub_date_xlabels(params=None, ax=ax, ylim=ylim, dtV=self.datD['DC'].dtV)  # date labels
+            #if iS != 2:
+            #    ax.set_xticklabels('')
+            ax.set_ylim(0,59)
+            ax.set_xlim((6,len(xs0)))
+
+
+            plt.grid(False, which='both', axis='x')
+            sns.despine(left=True, right=True, top=True, bottom=False)
+            ax.annotate(self.params.loc[st, 'fullname'], xy=(0.04,0.95), xycoords='axes fraction',
+                        ha='left', va='top', fontsize=14, fontweight='bold')
+
+
+            plt.ylabel('pos. test rates (%)', fontsize=12)
+
+
+
+        plt.tight_layout(h_pad=2, pad=1) #rect=(0,0,0,0.95))
+
+        # names annotate
+        ap0 = {'ha': 'left', 'xy': (1.2, 0.02)}
+        ax.annotate(get_cred_str(), fontsize=8, va='bottom', xycoords='axes fraction', **ap0)
+        # 95% CI text
+        ax0 = plt.subplot(gs[0,0])
+        ax0.annotate('95% CI', fontsize=11, va='top', ha='left', fontweight='medium',
+                     color=self.params.loc['DC','colors'], alpha=0.5,
+                     xycoords='data', xy=(20,10))
+        # guide arrow
+        ax0.annotate('improvement\n(tests less likely\n to be positive)', xy=(1.2,0.5), xycoords='axes fraction',
+                    textcoords='offset points', xytext=(0,40),
+                    arrowprops=dict(arrowstyle='-|>,head_width=0.4,head_length=0.8', connectionstyle='arc3', color='0.4', lw=1),
+                    color='0.3', ha='center')
+        # suptitle
+        tStr = datetime.date.today().strftime('%a %B %-d')
+        fig.suptitle('%s: %s' % (tStr, title_str),
+                     fontsize=16, fontname='Roboto', fontweight='light',
+                     x=0, y=1.01, ha='left', va='bottom')
+
+        datestr = datetime.datetime.now().strftime('%y%m%d')
+        if doSave:
+            fig.savefig('./fig-output/posrate-MH-%s.png'%datestr, facecolor=fig.get_facecolor(),
+                    dpi=300, bbox_inches='tight', pad_inches=0.5)
