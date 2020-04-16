@@ -378,6 +378,7 @@ class PlotTesting:
             if state == 'DC':
                 ndV[26] = ndV[27] / 2
                 ndV[27] = ndV[27] / 2
+                ndV[40] = np.nan # is negative on this day (negative new cases?  adjustment?)
                 # negV.loc[20200401] = negV.loc[20200402]/2
             pctPos = pdV / (pdV + ndV) * 100
             dtV = pd.to_datetime(stDf['date'], format='%Y%m%d')
@@ -409,8 +410,9 @@ class PlotTesting:
         meanNDay = 7
         desNs = r_[maxN-meanNDay:maxN]
         tV = np.hstack([self.datD[x].pctPos[desNs] for x in self.datD.keys()])
-        tM = np.mean(tV)
+        tM = np.nanmean(tV)
         plt.plot(desNs, tM+desNs*0, color='k', lw=5, ls='-', alpha=0.5)
+
         # anno it
         ax.annotate('mean\npos test rates,\nlast %d days'%meanNDay,
                     xy=(desNs[2],tM), xycoords='data', xytext=(-50,+50), textcoords='offset points',
@@ -427,7 +429,6 @@ class PlotTesting:
         ax3 = plt.subplot(gs[2,1])
         for state in ['DC', 'MD', 'VA']:
             dd = self.datD[state]
-            display(len(dd.posV))
             pH = ax.plot(dd.pdV, '.-', label=state)
             pH = ax2.plot(dd.ndV, '.-', label=state)
             pH = ax3.plot(dd.ndV+dd.pdV, '.-', label=state)
@@ -447,11 +448,14 @@ class PlotTesting:
                      'Test rates, mid-Atlantic (DC, MD, VA)',
                      fontsize=16, fontname='Roboto', fontweight='light',
                      x=0.05, y=0.92, ha='left', va='bottom')
+
         ax3.annotate('Data notes:\n'
-                     '• DC on Apr 1 reported zero neg. cases, and \n  on Apr 2 neg. count doubled, so we adjusted each\n  day to be half the Apr 3 number.',
+                     '• DC, Apr 1: reported zero neg. tests, and \n  on Apr 2 neg. count doubled, so we adjusted each\n  day to be half the Apr 3 number.\n'
+                     '• DC, Apr 15: reported fewer than zero neg. tests;\n  dropped this point.',
                       xy=(0.05,0.1), xycoords='figure fraction')
 
         if doSave:
+            datestr = datetime.datetime.now().strftime('%y%m%d')            
             fig.savefig('./fig-output/testing-%s.png'%datestr,
                     dpi=300, bbox_inches='tight', pad_inches=0.5)
                     #bbox_inches=r_[0,0,10,15])#,

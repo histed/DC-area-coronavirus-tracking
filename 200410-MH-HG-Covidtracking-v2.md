@@ -215,7 +215,7 @@ multipanel plot
 ```python
 plott = cvd.PlotTesting(ctDf)
 
-fig = plott.fig_multipanel_test(doSave=False)
+fig = plott.fig_multipanel_test(doSave=True)
 ;
 
 ```
@@ -227,7 +227,7 @@ fig = plott.fig_multipanel_test(doSave=False)
 plott = cvd.PlotTesting(ctDf)
 
 fig = plott.fig_pos_test_rate(title_str='Positive test rates are steady or even rising', 
-                              nbootreps=10, doSave=True)
+                              nbootreps=1000, doSave=True)
 ```
 
 ## MH figure of doubling rates
