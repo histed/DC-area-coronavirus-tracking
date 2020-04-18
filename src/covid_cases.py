@@ -179,6 +179,7 @@ class PlotDoubling:
         
         self.params = params.copy()
         self.stateList = stateList
+        self.smoothSpan = smoothSpan
         sns.set_palette('tab10')  # mpl default
 
         self.doubles = pd.DataFrame(columns={s for s in stateList})  # depends on a dict with no values... ??
@@ -280,6 +281,68 @@ class PlotDoubling:
 
         if doSave:
             fig.savefig('./fig-output/increment-MH-%s-%s.png'%(yname, datestr), facecolor=fig.get_facecolor(),
+                    dpi=300, bbox_inches='tight', pad_inches=0.5)
+            
+    def fig_lowess_cases(self, doSave=True, title_str='', ylim=None, cred_left=False, yname='cases'):
+        """3-panel incremental lowess cases plot"""
+
+        datestr = datetime.datetime.now().strftime('%y%m%d')
+
+        sns.set_style('whitegrid')
+        nRows = 3
+        fig = plt.figure(figsize=r_[4, 3*nRows]*0.9, dpi=100)
+        gs = mpl.gridspec.GridSpec(nRows,1)
+
+        for (iS,st) in enumerate(self.stateList):
+            ax = plt.subplot(gs[iS])
+            ax.set_facecolor('#fffdfe')
+
+            nanIx = self.params.loc[st, 'nanIx'][0]
+            ys0 = self.increment[st][::-1]
+            ys0[ys0<0] = 0
+           
+            ys0_smooth = ptMH.math.smooth_lowess(ys0, x=None, span=self.smoothSpan, robust=False, iter=None, axis=-1)
+               
+            plt.plot(self.doubles['day'], ys0_smooth, color=self.params.loc[st, 'color'])
+            """plt.axvline(x = 32, color = '0.5', alpha = 0.5)
+            plt.axvline(x = 37, color = '0.5', alpha = 0.5)
+            plt.axvline(x = 39, color = '0.5', alpha = 0.5)
+            plt.annotate('election day', xy = [30, 50], fontsize = 7, rotation = 90)
+            plt.annotate('incubation time', xy = [34, 50], fontsize = 7, rotation = 90)
+            plt.annotate('lab time', xy = [37.5, 50], fontsize = 7, rotation = 90)"""
+            #ys0[nanIx] = np.nan
+            #pH, = plt.plot(self.doubles['day'], ys0, alpha = 0.8, lw = 0.75)
+            #ys0 = self.doubles[st+'_smooth']; ys0[nanIx] = np.nan
+            #plt.plot(self.doubles['day'], ys0, label = st, lw = 2.5, color = pH.get_color())
+            #ast_double = self.doubles[st+'_smooth'].iloc[-1]
+            #self.params.loc[st, 'last_double'] = last_double
+            #self.params.loc[st, 'color'] = pH.get_color()
+        
+            plt.grid(False, which='both', axis='x')
+            sns.despine(left=True, right=True, top=True, bottom=False)
+
+            sub_date_xlabels(self.params, ax, ylim=ylim) # date labels
+
+            # ax fixups
+            if iS == 1:
+                ax.set_ylabel('number of %s per day'%yname, fontsize=12)
+
+
+            ax.annotate(self.params.loc[st, 'fullname'], xy=(0.02,0.98), xycoords='axes fraction',
+                        ha='left', va='top', fontsize=14, fontweight='bold')
+
+        plt.tight_layout(h_pad=2)
+        
+        ap0 = {'ha': 'left', 'xy': (1.2, 0.02) }
+        ax.annotate(get_cred_str(), fontsize=8, va='bottom', xycoords='axes fraction', **ap0)
+
+        tStr = datetime.date.today().strftime('%a %B %-d')
+        fig.suptitle('%s: %s' % (tStr, title_str),
+                     fontsize=16, fontname='Roboto', fontweight='light',
+                     x=0.05, y=1.01, ha='left', va='bottom')
+
+        if doSave:
+            fig.savefig('./fig-output/lowess-MH-%s-%s.png'%(yname, datestr), facecolor=fig.get_facecolor(),
                     dpi=300, bbox_inches='tight', pad_inches=0.5)
         
         

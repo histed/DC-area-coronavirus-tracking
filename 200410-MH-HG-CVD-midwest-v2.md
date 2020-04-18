@@ -82,14 +82,14 @@ ctDf.to_hdf('./ct-data/covidtracking-data-%s.h5'%datestr, key='ct', complevel=9,
 ```
 
 ```python
-paramsC = pd.DataFrame(index={'WI','IL','MN','NY'}, columns=['fullname'])
-paramsC.loc[:,'fullname'] = pd.Series({ 'WI': 'Wisconsin', 'IL': 'Illinois', 'MN': 'Minnesota'})
-paramsC.loc[:,'labYOff'] = pd.Series({ 'WI': -15, 'IL': +10, 'MN': -10, 'NY':-15})
-paramsC.loc[:,'labXOff'] = pd.Series({ 'WI': 0, 'IL': 0, 'MN': +5, 'NY': 0})
-paramsC.loc[:,'lw'] = pd.Series({ 'WI': 2, 'IL': 2, 'MN': 2, 'NY': 0.8})
+paramsC = pd.DataFrame(index={'WI','IL', 'NY'}, columns=['fullname'])
+paramsC.loc[:,'fullname'] = pd.Series({ 'WI': 'Wisconsin', 'IL': 'Illinois'})
+paramsC.loc[:,'labYOff'] = pd.Series({ 'WI': -15, 'IL': +10, 'NY':-15})
+paramsC.loc[:,'labXOff'] = pd.Series({ 'WI': 0, 'IL': 0, 'NY': 0})
+paramsC.loc[:,'lw'] = pd.Series({ 'WI': 2, 'IL': 2, 'NY': 0.8})
 #params.loc[:,'xoff'] = pd.Series({ 'DC': -9, 'MD': -6, 'VA': -6, 'NY': -0.3})
-paramsC.loc[:,'xoff'] = pd.Series({ 'WI': 0, 'IL': 0, 'MN': 0, 'NY': -1})
-paramsC.loc[:,'color'] = pd.Series({ 'NY': 0.4, 'WI': '#1f77b4', 'IL': '#ff7f0e', 'MN': '#2ca02c'})
+paramsC.loc[:,'xoff'] = pd.Series({ 'WI': 0, 'IL': 0, 'NY': -1})
+paramsC.loc[:,'color'] = pd.Series({ 'NY': 0.4, 'WI': '#1f77b4', 'IL': '#ff7f0e'})
 
 display(paramsC)
 ```
@@ -109,7 +109,7 @@ fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
 # big plot - states
 df = ctDf.copy()
-for st in ['WI', 'IL', 'MN', 'NY']:
+for st in ['WI', 'IL', 'NY']:
     df, paramsC = cvd.plot_state(df, st, paramsC, ax, False)
 
 xmax = np.max(paramsC.loc['WI','plot_data']['xs'])
@@ -144,7 +144,7 @@ ax.annotate(tStr, xy=(xmax,10), xycoords='data', xytext=(0,-30), textcoords='off
 ## credit string
 ax.annotate(tCredStr, xy=(0.98,0.02), xycoords='axes fraction', ha='right', fontsize=8, color='0.3')
 fig.suptitle(f"{datetime.date.today().strftime('%a %B %-d')}: \n"
-             'Cumulative cases, WI area (WI, IL, MN)',
+             'Cumulative cases, WI area',
              fontsize=16, fontname='Roboto', fontweight='light', 
              x=0.05, y=0.92, ha='left', va='bottom')
 
@@ -163,7 +163,7 @@ sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
 df = ctDf.copy()
-for st in ['WI', 'IL', 'MN', 'NY']:
+for st in ['WI', 'IL', 'NY']:
     df, paramsD = cvd.plot_state(df, st, paramsD, ax, False, is_cases=False)
 
 # big plot fixup
@@ -191,7 +191,7 @@ ax.annotate(tStr, xy=(xmax, 1), xycoords='data', xytext=(0,-30), textcoords='off
 
 ax.annotate(tCredStr, xy=(0.98,0.02), xycoords='axes fraction', ha='right', fontsize=8, color='0.3')
 fig.suptitle(f"{datetime.date.today().strftime('%a %B %-d')}: \n"
-             'Cumulative deaths, WI area (WI, IL, MN)',
+             'Cumulative deaths, WI area',
              fontsize=16, fontname='Roboto', fontweight='light', 
              x=0.05, y=0.92, ha='left', va='bottom')
 
@@ -211,11 +211,6 @@ for state in ['WI']:
 
 # Positive test rates in MD, DC, VA
 multipanel plot
-
-```python
-MNnew = pd.DataFrame({'date':[20200305, 20200304], 'state':['MN', 'MN']})
-ctDf = pd.concat([ctDf, MNnew])
-```
 
 ```python
 plott = cvd.PlotTesting(ctDf)
@@ -266,6 +261,13 @@ plotd.fig_increment(doSave=True, yname='cases', title_str='Cases reported per da
 plotd = cvd.PlotDoubling(params=paramsD, smoothSpan=13)
 
 plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day')
+```
+
+```python
+plotd = cvd.PlotDoubling(params=paramsC, smoothSpan=5)
+
+plotd.fig_lowess_cases(doSave=True, yname='cases', title_str='Cases reported per day')
+
 ```
 
 ```python

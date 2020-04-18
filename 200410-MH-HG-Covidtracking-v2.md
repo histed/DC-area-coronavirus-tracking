@@ -264,5 +264,15 @@ plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per 
 ```
 
 ```python
+plotd = cvd.PlotDoubling(params=paramsC, smoothSpan=7)
+
+plotd.fig_lowess_cases(doSave=True, yname='cases', title_str='Cases reported per day, Mid-Atlantic')
+```
+
+```python
+
+```
+
+```python
 
 ```
