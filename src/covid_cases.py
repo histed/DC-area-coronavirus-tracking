@@ -31,15 +31,15 @@ def get_cred_str():
     tCredStr = 'Updated %s, 20:00 EDT\n  data: http://covidtracking.com\nGraphic: Hannah Goldbach, Mark Histed\n  @hannah_goldbach @histedlab' % tDStr
     return(tCredStr)
 
-def plot_state(df, state, params, ax, is_inset=False, is_cases=True, do_plot=True):
-    """
-    Also computes the params['plot_data'] field
-    Params:
+
+def df_to_plotdata(df, state, is_cases=True):
+    """ Main processing function, extracts the relevant case/death data from input df
+
+    Args:
         is_cases: True means plot cases, False means plot deaths
-    Returns:
-        params, df : updated param struct, data frame
+    Returns: 
+        (xs, ys, dtV)
     """
-    global todayx
     desIx = df.state == state
     if is_cases:
         ys = df.loc[desIx,'positive']
@@ -49,9 +49,26 @@ def plot_state(df, state, params, ax, is_inset=False, is_cases=True, do_plot=Tru
     dtV = pd.to_datetime(df.loc[desIx,'date'], format='%Y%m%d')
     print(f'Latest data for {state}: {dtV.iloc[0]}')
     xs = (dtV - dtV.iloc[-1]) 
-    xs = r_[[x.days for x in xs]] + params.loc[state, 'xoff'] #- todayx
+    xs = r_[[x.days for x in xs]] 
 
     df.loc[desIx,'day0'] = xs
+
+    return (xs,ys,dtV)
+
+
+def plot_state(df, state, params, ax, is_inset=False, is_cases=True, do_plot=True):
+    """plot one state cumulative.
+
+    Used to compute the params['plot_data'] field, now df_to_plotdata() does
+
+    Args:
+        is_cases: True means plot cases, False means plot deaths
+    Returns:
+        params, df : updated param struct, data frame
+    """
+
+    xs, ys, dtV = df_to_plotdata(df, state, is_cases=is_cases)
+    xs = xs + params.loc[state, 'xoff'] #- todayx
     params.loc[state,'plot_data'] = [{'xs':xs, 'ys':ys, 'dtV': dtV}]
 
     if do_plot:
@@ -76,9 +93,10 @@ def plot_state(df, state, params, ax, is_inset=False, is_cases=True, do_plot=Tru
                 ph.set_color('0.4')
                 ah.set_color('0.4')
         #params.loc[state, 'color'] = ph.get_color()  # this is now set up front
-    #todayx = np.max((todayx, np.max(xs)))
 
     return df, params
+
+
     
 def fixups(ax):
     lp = r_[1,2,5]
@@ -229,9 +247,37 @@ class PlotDoubling:
         return df
 
 
+    def plot_increment(self, st, ylim=None, yname='cases', doFit=False, color='b', smoothSpan=11, nbootreps=100):
+        """On one axes, plot bar with smoothed lowess.  One state."""
+        ax = plt.gca()
+        ax.set_facecolor('#fffdfe')
+        nanIx = self.params.loc[st, 'nanIx'][0]
+        ys0 = self.increment[st][::-1]
+        ys0[ys0<0] = 0
+        xs0 = self.doubles['day'].to_numpy()
+        p1H = ax.bar(self.doubles['day'], ys0, color=color)
+        if doFit:
+            #plt.setp(p1H, alpha=0.6, color='0.4', lw=0.25, ec=color)
+            ys1 = ptMH.math.smooth_lowess(ys0, xs0, span=smoothSpan)
+            (ylow, yhigh, out_xs, boot_mat) = ptMH.math.smooth_lowess_bootstrap(ys0, xs0,
+                                                                                nbootreps=nbootreps, span=smoothSpan)
+            #ax.fill_between(out_xs+0.5, ylow, yhigh, alpha=0.3, facecolor=color, lw=1,  ls='-')
+            ax.fill_between(out_xs+0.5, ylow, yhigh, alpha=0.3, facecolor='0.5', lw=1,  ls='-')            
+            lp = {'color': color, 'lw': 0.5}
+            ax.plot(out_xs+0.5, ylow, **lp)
+            ax.plot(out_xs+0.5, yhigh, **lp)            
+            #ax.plot(xs0, ys1, color=color, lw=5)
+            ax.plot(xs0, ys1, color='0.2', lw=5)            
+
+        ax.set_ylabel('%s per day'%yname, fontsize=12)
+
+        plt.grid(False, which='both', axis='x')
+        sns.despine(left=True, right=True, top=True, bottom=False)
+        sub_date_xlabels(self.params, ax, ylim=ylim) # date labels
+
+    
     def fig_increment(self, doSave=True, title_str='', ylim=None, cred_left=False, yname='cases'):
         """3-panel incremental bar plot"""
-
         datestr = datetime.datetime.now().strftime('%y%m%d')
 
         sns.set_style('whitegrid')
@@ -241,28 +287,12 @@ class PlotDoubling:
 
         for (iS,st) in enumerate(self.stateList):
             ax = plt.subplot(gs[iS])
-            ax.set_facecolor('#fffdfe')
+            self.plot_increment(st, ylim=ylim, color=self.params.loc[st, 'color'])
 
-            nanIx = self.params.loc[st, 'nanIx'][0]
-            ys0 = self.increment[st][::-1]
-            ys0[ys0<0] = 0
-            plt.bar(self.doubles['day'], ys0, color=self.params.loc[st, 'color'])
-            #ys0[nanIx] = np.nan
-            #pH, = plt.plot(self.doubles['day'], ys0, alpha = 0.8, lw = 0.75)
-            #ys0 = self.doubles[st+'_smooth']; ys0[nanIx] = np.nan
-            #plt.plot(self.doubles['day'], ys0, label = st, lw = 2.5, color = pH.get_color())
-            #ast_double = self.doubles[st+'_smooth'].iloc[-1]
-            #self.params.loc[st, 'last_double'] = last_double
-            #self.params.loc[st, 'color'] = pH.get_color()
-        
-            plt.grid(False, which='both', axis='x')
-            sns.despine(left=True, right=True, top=True, bottom=False)
-
-            sub_date_xlabels(self.params, ax, ylim=ylim) # date labels
 
             # ax fixups
-            if iS == 1:
-                ax.set_ylabel('number of %s per day'%yname, fontsize=12)
+            if iS != 1:
+                ax.set_ylabel('')
 
 
             ax.annotate(self.params.loc[st, 'fullname'], xy=(0.02,0.98), xycoords='axes fraction',
@@ -462,6 +492,36 @@ class PlotTesting:
         return fig
 
 
+    def plot_pos_test_rate(self, st, color=None, nbootreps=100, ylim=None, sm_span=9):
+        """
+        Returns: some stuff, see code
+        """
+        ax = plt.gca()
+
+        ax.set_facecolor('#f8fafb')#'#f7fdfe')
+        dD = self.datD[st]
+        ys0 = dD.pctPos
+        xs0 = dD.xs[1:]-1 # drop the first element because plotting against a difference
+        pH, = plt.plot(xs0, ys0, alpha = 0.8, lw = 0.75, color=color)
+        desIx = (xs0 > 15) & (ys0 < 100)
+        smD = { 'span': sm_span }
+        ysSm = ptMH.math.smooth_lowess(ys0[desIx], xs0[desIx], **smD)
+        (ylow, yhigh, out_xs, boot_mat) = ptMH.math.smooth_lowess_bootstrap(ys0[desIx], xs0[desIx],
+                                                                            nbootreps=nbootreps, **smD)
+
+        pH2, = ax.plot(xs0[desIx], ysSm, lw=5, color=pH.get_color())
+        ax.fill_between(out_xs, ylow, yhigh, alpha=0.2, color=pH.get_color(), edgecolor=None, lw=0)
+
+        sub_date_xlabels(params=None, ax=ax, ylim=ylim, dtV=self.datD[self.stateL[0]].dtV)  # date labels
+
+        plt.grid(False, which='both', axis='x')
+        sns.despine(left=True, right=True, top=True, bottom=False)
+
+        plt.ylabel('pos. test rates (%)', fontsize=12)
+
+        return xs0
+
+            
     def fig_pos_test_rate(self, ylim=None, title_str='', nbootreps=100, doSave=False):
         sns.set_style('whitegrid')
         fig = plt.figure(figsize=r_[3.8, 3]*r_[2,3]*1, dpi=100)
@@ -469,36 +529,15 @@ class PlotTesting:
 
         for (iS,st) in enumerate(self.stateL):
             ax = plt.subplot(gs[iS,0])
-            ax.set_facecolor('#f8fafb')#'#f7fdfe')
-            dD = self.datD[st]
-            ys0 = dD.pctPos
-            xs0 = dD.xs[1:]-1 # drop the first element because plotting against a difference
-            pH, = plt.plot(xs0, ys0, alpha = 0.8, lw = 0.75, color=self.params.loc[st,'colors'])
-            desIx = (xs0 > 15) & (ys0 < 100)
-            smD = { 'span': 9 }
-            ysSm = ptMH.math.smooth_lowess(ys0[desIx], xs0[desIx], **smD)
-            (ylow, yhigh, out_xs, boot_mat) = ptMH.math.smooth_lowess_bootstrap(ys0[desIx], xs0[desIx],
-                                                                                nbootreps=nbootreps, **smD)
+            xs0 = self.plot_pos_test_rate(st, color=self.params.loc[st,'colors'], nbootreps=nbootreps, ylim=ylim)
 
-            pH2, = ax.plot(xs0[desIx], ysSm, lw=5, color=pH.get_color())
-            ax.fill_between(out_xs, ylow, yhigh, alpha=0.2, color=pH.get_color(), edgecolor=None, lw=0)
-
-            sub_date_xlabels(params=None, ax=ax, ylim=ylim, dtV=self.datD['DC'].dtV)  # date labels
             #if iS != 2:
             #    ax.set_xticklabels('')
             ax.set_ylim(0,59)
             ax.set_xlim((6,len(xs0)))
 
-
-            plt.grid(False, which='both', axis='x')
-            sns.despine(left=True, right=True, top=True, bottom=False)
             ax.annotate(self.params.loc[st, 'fullname'], xy=(0.04,0.95), xycoords='axes fraction',
                         ha='left', va='top', fontsize=14, fontweight='bold')
-
-
-            plt.ylabel('pos. test rates (%)', fontsize=12)
-
-
 
         plt.tight_layout(h_pad=2, pad=1) #rect=(0,0,0,0.95))
 

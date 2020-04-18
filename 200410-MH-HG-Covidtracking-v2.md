@@ -224,6 +224,7 @@ fig = plott.fig_multipanel_test(doSave=True)
 
 
 ```python
+%pdb off
 plott = cvd.PlotTesting(ctDf)
 
 fig = plott.fig_pos_test_rate(title_str='Positive test rates are steady or even rising', 
@@ -263,6 +264,67 @@ plotd = cvd.PlotDoubling(params=paramsD, smoothSpan=13)
 plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day, Mid-Atlantic')
 ```
 
+## cases per day, by state, with lowess fit
+
+This is just a single axis panel
+
 ```python
+%pdb on
+stateL = ['WI','IL']
+nbootreps=100
+
+paramsD.loc['WI',:] = pd.Series({'color':r_[sns.color_palette()[6]], 'fullname': 'Wisconsin'})
+paramsD.loc['IL',:] = pd.Series({'color':r_[sns.color_palette()[8]], 'fullname': 'Illinois'})
+#display(paramsD)
+for state in stateL:
+    xs, ys, dtV = cvd.df_to_plotdata(df, state, is_cases=True)
+    paramsD.loc[state,'plot_data'] = [{'xs':xs, 'ys':ys, 'dtV': dtV}]
+display(paramsD)    
+
+plotd = cvd.PlotDoubling(params=paramsD, stateList=stateL, smoothSpan=13)
+
+
+plotd.plot_increment('IL', doFit=True, nbootreps=nbootreps, color=sns.color_palette()[0])
+#plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day, Mid-Atlantic')
+```
+
+## Bigger figure, case numbers and pos test numbers
+
+```python
+nbootreps = 100
+title_str = 'Wisconsin and Illinois: cases per day'
+
+plotd = cvd.PlotDoubling(params=paramsD, stateList=stateL, smoothSpan=13)
+plott = cvd.PlotTesting(ctDf, stateL=stateL)
+
+
+sns.set_style('whitegrid')
+fig = plt.figure(figsize=r_[3.8, 3]*r_[2,3]*1, dpi=100)
+gs = mpl.gridspec.GridSpec(3,2)
+
+pos_ylim = r_[0,40]
+for (iS,state) in enumerate(['WI','IL']):
+    ax = fig.add_subplot(gs[0,iS])
+    plotd.plot_increment(state, doFit=True, nbootreps=nbootreps, color=paramsD.loc[state,'color'])
+    #plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day, Mid-Atlantic')
+    #ax.annotate(paramsD.loc[state, 'fullname'], xy=(0.04,0.95), xycoords='axes fraction',
+    #            ha='left', va='top', fontsize=14, fontweight='bold')
+    ax.set_title(paramsD.loc[state, 'fullname'], fontsize=14, fontweight='bold', va='bottom')
+
+
+    ax2 = fig.add_subplot(gs[1,iS])
+    plott.plot_pos_test_rate(state, color=paramsD.loc[state,'color'], nbootreps=nbootreps, ylim=pos_ylim, sm_span=5)
+    ptMH.plotting.ticks_subset_labeled
+    
+    if iS > 0:
+        ax.set_ylabel('')
+        ax2.set_ylabel('')
+    
+
+plt.tight_layout(h_pad=2, pad=1) #rect=(0,0,0,0.95))
+tStr = datetime.date.today().strftime('%a %B %-d')
+fig.suptitle('%s: %s' % (tStr, title_str),
+             fontsize=16, fontname='Roboto', fontweight='light',
+             x=0, y=1.01, ha='left', va='bottom')
 
 ```
