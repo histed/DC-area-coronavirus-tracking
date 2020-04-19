@@ -57,7 +57,7 @@ from argparse import Namespace
 
 sns.set_style('whitegrid')
 
-from src import covid_cases as cvd
+from src import covid_midwest as cvd
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -82,14 +82,14 @@ ctDf.to_hdf('./ct-data/covidtracking-data-%s.h5'%datestr, key='ct', complevel=9,
 ```
 
 ```python
-paramsC = pd.DataFrame(index={'DC','MD','VA','NY'}, columns=['fullname'])
-paramsC.loc[:,'fullname'] = pd.Series({ 'DC': 'District of Columbia', 'MD': 'Maryland', 'VA': 'Virginia'})
-paramsC.loc[:,'labYOff'] = pd.Series({ 'DC': -15, 'MD': +10, 'VA': -10, 'NY':-15})
-paramsC.loc[:,'labXOff'] = pd.Series({ 'DC': 0, 'MD': 0, 'VA': +5, 'NY': 0})
-paramsC.loc[:,'lw'] = pd.Series({ 'DC': 2, 'MD': 2, 'VA': 2, 'NY': 0.8})
+paramsC = pd.DataFrame(index={'WI','IL', 'NY'}, columns=['fullname'])
+paramsC.loc[:,'fullname'] = pd.Series({ 'WI': 'Wisconsin', 'IL': 'Illinois'})
+paramsC.loc[:,'labYOff'] = pd.Series({ 'WI': -15, 'IL': +10, 'NY':-15})
+paramsC.loc[:,'labXOff'] = pd.Series({ 'WI': 0, 'IL': 0, 'NY': 0})
+paramsC.loc[:,'lw'] = pd.Series({ 'WI': 2, 'IL': 2, 'NY': 0.8})
 #params.loc[:,'xoff'] = pd.Series({ 'DC': -9, 'MD': -6, 'VA': -6, 'NY': -0.3})
-paramsC.loc[:,'xoff'] = pd.Series({ 'DC': 0, 'MD': 0, 'VA': 0, 'NY': -1})
-paramsC.loc[:,'color'] = pd.Series({ 'NY': 0.4, 'DC': '#1f77b4', 'MD': '#ff7f0e', 'VA': '#2ca02c'})
+paramsC.loc[:,'xoff'] = pd.Series({ 'WI': 0, 'IL': 0, 'NY': -1})
+paramsC.loc[:,'color'] = pd.Series({ 'NY': 0.4, 'WI': '#1f77b4', 'IL': '#ff7f0e'})
 
 display(paramsC)
 ```
@@ -109,10 +109,10 @@ fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
 # big plot - states
 df = ctDf.copy()
-for st in ['DC', 'MD', 'VA', 'NY']:
+for st in ['WI', 'IL', 'NY']:
     df, paramsC = cvd.plot_state(df, st, paramsC, ax, False)
 
-xmax = np.max(paramsC.loc['DC','plot_data']['xs'])
+xmax = np.max(paramsC.loc['WI','plot_data']['xs'])
 xlim = r_[0,xmax+3]
     
 # big plot fixup
@@ -144,11 +144,11 @@ ax.annotate(tStr, xy=(xmax,10), xycoords='data', xytext=(0,-30), textcoords='off
 ## credit string
 ax.annotate(tCredStr, xy=(0.98,0.02), xycoords='axes fraction', ha='right', fontsize=8, color='0.3')
 fig.suptitle(f"{datetime.date.today().strftime('%a %B %-d')}: \n"
-             'Cumulative cases, mid-Atlantic (DC, MD, VA)',
+             'Cumulative cases, WI area',
              fontsize=16, fontname='Roboto', fontweight='light', 
              x=0.05, y=0.92, ha='left', va='bottom')
 
-fig.savefig('./fig-output/ct-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_inches=0.5)
+fig.savefig('./fig-output/midwest-ct-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_inches=0.5)
             #bbox_inches=r_[0,0,10,15])#, 
 ```
 
@@ -163,7 +163,7 @@ sns.set_style('darkgrid')
 fig, ax = plt.subplots(figsize=r_[1,1]*6, dpi=120)
 
 df = ctDf.copy()
-for st in ['DC', 'MD', 'VA', 'NY']:
+for st in ['WI', 'IL', 'NY']:
     df, paramsD = cvd.plot_state(df, st, paramsD, ax, False, is_cases=False)
 
 # big plot fixup
@@ -191,17 +191,17 @@ ax.annotate(tStr, xy=(xmax, 1), xycoords='data', xytext=(0,-30), textcoords='off
 
 ax.annotate(tCredStr, xy=(0.98,0.02), xycoords='axes fraction', ha='right', fontsize=8, color='0.3')
 fig.suptitle(f"{datetime.date.today().strftime('%a %B %-d')}: \n"
-             'Cumulative deaths, mid-Atlantic (DC, MD, VA)',
+             'Cumulative deaths, WI area',
              fontsize=16, fontname='Roboto', fontweight='light', 
              x=0.05, y=0.92, ha='left', va='bottom')
 
 
-fig.savefig('./fig-output/dt-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_inches=0.5)
+fig.savefig('./fig-output/midwest-dt-%s.png'%datestr, dpi=300, bbox_inches='tight', pad_inches=0.5)
             #bbox_inches=r_[0,0,10,15])#, 
 ```
 
 ```python
-for state in ['DC']:
+for state in ['WI']:
     desIx = ctDf.state == state
     stDf = ctDf.loc[desIx,:].copy()
     stDf.set_index('date', inplace=True)
@@ -215,7 +215,7 @@ multipanel plot
 ```python
 plott = cvd.PlotTesting(ctDf)
 
-fig = plott.fig_multipanel_test(doSave=True)
+fig = plott.fig_multipanel_test(doSave=False)
 ;
 
 ```
@@ -226,8 +226,8 @@ fig = plott.fig_multipanel_test(doSave=True)
 ```python
 plott = cvd.PlotTesting(ctDf)
 
-fig = plott.fig_pos_test_rate(title_str='Positive test rates are steady or even rising', 
-                              nbootreps=1000, doSave=True)
+fig = plott.fig_pos_test_rate(title_str='Positive test rates are steady', 
+                              nbootreps=10, doSave=True)
 ```
 
 ## MH figure of doubling rates
@@ -236,7 +236,7 @@ fig = plott.fig_pos_test_rate(title_str='Positive test rates are steady or even 
 ```python
 plotd = cvd.PlotDoubling(params=paramsC)
 
-plotd.plot_doubling(title_str='Reported case growth slowing \n  in Washington, DC area', ylim=(0,15))
+plotd.plot_doubling(title_str='Reported case growth slowing \n  in WI Area', ylim=(0,30))
 
 
 
@@ -245,7 +245,7 @@ plotd.plot_doubling(title_str='Reported case growth slowing \n  in Washington, D
 ```python
 plotd = cvd.PlotDoubling(params=paramsD, smoothSpan=13)
 
-plotd.plot_doubling(title_str='Doubling time for reported deaths.\n  Not really enough data to draw inferences yet',
+plotd.plot_doubling(title_str='Doubling time for reported deaths \n  in WI area. ',
                     cred_left=True, ylim=[-1.9,16], yname='deaths')
 
 
@@ -254,22 +254,19 @@ plotd.plot_doubling(title_str='Doubling time for reported deaths.\n  Not really 
 ```python
 plotd = cvd.PlotDoubling(params=paramsC, smoothSpan=13)
 
-plotd.fig_increment(doSave=True, yname='cases', title_str='Cases reported per day, Mid-Atlantic')
+plotd.fig_increment(doSave=True, yname='cases', title_str='Cases reported per day')
 ```
 
 ```python
 plotd = cvd.PlotDoubling(params=paramsD, smoothSpan=13)
 
-plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day, Mid-Atlantic')
+plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day')
 ```
 
 ```python
-plotd = cvd.PlotDoubling(params=paramsC, smoothSpan=7)
+plotd = cvd.PlotDoubling(params=paramsC, smoothSpan=5)
 
-plotd.fig_lowess_cases(doSave=True, yname='cases', title_str='Cases reported per day, Mid-Atlantic')
-```
-
-```python
+plotd.fig_lowess_cases(doSave=True, yname='cases', title_str='Cases reported per day')
 
 ```
 
