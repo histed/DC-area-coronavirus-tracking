@@ -255,29 +255,37 @@ class PlotDoubling:
         ys0 = self.increment[st][::-1]
         ys0[ys0<0] = 0
         xs0 = self.doubles['day'].to_numpy()
-        p1H = ax.bar(self.doubles['day'], ys0, color=color)
+        p1H = ax.bar(self.doubles['day'], ys0, color=color, zorder=-10)
         if doFit:
             #plt.setp(p1H, alpha=0.6, color='0.4', lw=0.25, ec=color)
             ys1 = ptMH.math.smooth_lowess(ys0, xs0, span=smoothSpan)
-            (ylow, yhigh, out_xs, boot_mat) = ptMH.math.smooth_lowess_bootstrap(ys0, xs0,
-                                                                                nbootreps=nbootreps, span=smoothSpan)
-            #ax.fill_between(out_xs+0.5, ylow, yhigh, alpha=0.3, facecolor=color, lw=1,  ls='-')
-            ax.fill_between(out_xs+0.5, ylow, yhigh, alpha=0.3, facecolor='0.5', lw=1,  ls='-')            
-            lp = {'color': color, 'lw': 0.5}
-            ax.plot(out_xs+0.5, ylow, **lp)
-            ax.plot(out_xs+0.5, yhigh, **lp)            
-            #ax.plot(xs0, ys1, color=color, lw=5)
-            ax.plot(xs0, ys1, color='0.2', lw=5)            
+            ylow, yhigh, out_xs =[None]*3
+            if nbootreps is not None:
+                (ylow, yhigh, out_xs, boot_mat) = ptMH.math.smooth_lowess_bootstrap(ys0, xs0,
+                                                                                    nbootreps=nbootreps, span=smoothSpan)
+                #ax.fill_between(out_xs+0.5, ylow, yhigh, alpha=0.3, facecolor=color, lw=1,  ls='-')
+                ax.fill_between(out_xs+0.5, ylow, yhigh, alpha=0.2, facecolor='0.2', lw=1,  ls='-', zorder=10)            
+                lp = {'color': '0.2', 'lw': 1.0, 'alpha':0.4}
+                ax.plot(out_xs+0.5, ylow, **lp)
+                ax.plot(out_xs+0.5, yhigh, **lp)            
+                #ax.plot(xs0, ys1, color=color, lw=5)
+            ax.plot(xs0, ys1, color='0.2', lw=5, zorder=15)            
 
         ax.set_ylabel('%s per day'%yname, fontsize=12)
 
         plt.grid(False, which='both', axis='x')
         sns.despine(left=True, right=True, top=True, bottom=False)
         sub_date_xlabels(self.params, ax, ylim=ylim) # date labels
+        return Namespace(out_xs=out_xs, ylow=ylow, yhigh=yhigh)
 
     
-    def fig_increment(self, doSave=True, title_str='', ylim=None, cred_left=False, yname='cases'):
-        """3-panel incremental bar plot"""
+    def fig_increment(self, doSave=True, title_str='', ylim=None, cred_left=False, yname='cases', nbootreps=None, smoothSpan=None):
+        """3-panel incremental bar plot
+        Args:
+            smoothSpan: if none, no smoothing
+            nbootreps: if None, no bootstrap CIs
+        """
+
         datestr = datetime.datetime.now().strftime('%y%m%d')
 
         sns.set_style('whitegrid')
@@ -287,14 +295,31 @@ class PlotDoubling:
 
         for (iS,st) in enumerate(self.stateList):
             ax = plt.subplot(gs[iS])
-            self.plot_increment(st, ylim=ylim, color=self.params.loc[st, 'color'])
+            if smoothSpan is not None:
+                xp = {'nbootreps': nbootreps, 'doFit': True, 'smoothSpan': smoothSpan}
+            else:
+                xp = {}
+            axout = self.plot_increment(st, ylim=ylim, color=self.params.loc[st, 'color'], **xp)
 
 
             # ax fixups
             if iS != 1:
                 ax.set_ylabel('')
 
+            if iS == 0:
+                if smoothSpan is not None:
+                    nP = int(np.floor(len(axout.out_xs)/2.0))
+                    ax.annotate('95% CI', fontsize=11, va='bottom', ha='right', fontweight='medium',
+                                color='0.5', alpha=1.0,
+                                textcoords='offset points', xytext=(-8,-4),                                
+                                xycoords='data', xy=(axout.out_xs[nP], axout.yhigh[nP]))
+                    nP2 = len(axout.out_xs)//3
+                    ax.annotate('spline', fontsize=11, va='bottom', ha='right', fontweight='medium',
+                                color='0', alpha=1,
+                                textcoords='offset points', xytext=(-10,-4),
+                                xycoords='data', xy=(axout.out_xs[nP2], axout.yhigh[nP2]))
 
+                    
             ax.annotate(self.params.loc[st, 'fullname'], xy=(0.02,0.98), xycoords='axes fraction',
                         ha='left', va='top', fontsize=14, fontweight='bold')
 
