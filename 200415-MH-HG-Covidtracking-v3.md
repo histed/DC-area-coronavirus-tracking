@@ -16,6 +16,7 @@ jupyter:
 <!-- #region -->
 # Load covidtracking data and make some plots
 
+- v3: MH lots of refactoring, added lowess bootstrap; went to v3 to avoid conflicts with Hannah midwest cahnges
 - v2: MH refactor code from the doubling time plots
 
 
@@ -288,6 +289,7 @@ plotd = cvd.PlotDoubling(params=paramsD, stateList=stateL, smoothSpan=13)
 
 
 plotd.plot_increment('IL', doFit=True, nbootreps=nbootreps, color=sns.color_palette()[0])
+;
 #plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day, Mid-Atlantic')
 ```
 
