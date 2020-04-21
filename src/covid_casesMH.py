@@ -270,7 +270,7 @@ class PlotDoubling:
                 ax.plot(out_xs+0.5, ylow, **lp)
                 ax.plot(out_xs+0.5, yhigh, **lp)            
                 #ax.plot(xs0, ys1, color=color, lw=5)
-            ax.plot(xs0, ys1, color='0.2', lw=5, zorder=15)            
+            ax.plot(xs0, ys1, color='0.0', alpha=0.6, lw=5, zorder=15)            
 
         ax.set_ylabel('%s per day'%yname, fontsize=12)
 

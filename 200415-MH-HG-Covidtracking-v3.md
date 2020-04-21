@@ -306,8 +306,8 @@ plotd.fig_increment(doSave=True, yname='cases', nbootreps=nbootreps, smoothSpan=
 %pdb off
 nbootreps = 1000
 title_str = 'Wisconsin and Illinois: cases per day'
-sm_span_pos = 5
-sm_span_cases = 5
+sm_span_pos = 7
+sm_span_cases = 7
 yname = 'cases'
 doSave = True
 
