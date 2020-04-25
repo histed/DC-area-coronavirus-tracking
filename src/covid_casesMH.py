@@ -659,3 +659,50 @@ class PlotTesting:
         if doSave:
             fig.savefig('./fig-output/posrate-MH-%s.png'%datestr, facecolor=fig.get_facecolor(),
                     dpi=300, bbox_inches='tight', pad_inches=0.5)
+
+            
+
+
+def fig_midwest(paramsD, stateL, ctDf, sm_span_pos=7, sm_span_cases=7, yname='cases', doSave=True,
+                nbootreps=1000, title_str='Wisconsin and Illinois: cases per day'):
+
+    plotd = PlotDoubling(params=paramsD, stateList=stateL, smoothSpan=13)
+    plott = PlotTesting(ctDf, stateL=stateL)
+
+    sns.set_style('whitegrid')
+    fig = plt.figure(figsize=r_[3.8, 3] * r_[2, 3] * 1, dpi=100)
+    gs = mpl.gridspec.GridSpec(3, 2)
+
+    pos_ylim = r_[0, 40]
+    for (iS, state) in enumerate(['WI', 'IL']):
+        ax = fig.add_subplot(gs[0, iS])
+        plotd.plot_increment(state, doFit=True, nbootreps=nbootreps, color=paramsD.loc[state, 'color'],
+                             smoothSpan=sm_span_cases)
+        # plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day, Mid-Atlantic')
+        # ax.annotate(paramsD.loc[state, 'fullname'], xy=(0.04,0.95), xycoords='axes fraction',
+        #            ha='left', va='top', fontsize=14, fontweight='bold')
+        ax.set_title(paramsD.loc[state, 'fullname'], fontsize=14, fontweight='bold', va='bottom')
+
+        ax2 = fig.add_subplot(gs[1, iS])
+        plott.plot_pos_test_rate(state, color=paramsD.loc[state, 'color'], nbootreps=nbootreps, ylim=pos_ylim,
+                                 sm_span=sm_span_pos)
+        ptMH.plotting.ticks_subset_labeled
+
+        if iS > 0:
+            ax.set_ylabel('')
+            ax2.set_ylabel('')
+
+    plt.tight_layout(h_pad=2, pad=1)  # rect=(0,0,0,0.95))
+    tStr = datetime.date.today().strftime('%a %B %-d')
+    fig.suptitle('%s: %s' % (tStr, title_str),
+                 fontsize=16, fontname='Roboto', fontweight='light',
+                 x=0, y=1.01, ha='left', va='bottom')
+
+    ap0 = {'ha': 'left', 'xy': (1.2, 0.02)}
+    ax2.annotate(get_cred_str(), fontsize=8, va='bottom', xycoords='axes fraction', **ap0)
+
+    if doSave:
+        datestr = datetime.datetime.now().strftime('%y%m%d')
+        fig.savefig('./fig-output/wi-increment-MH-%s-%s.png' % (yname, datestr),
+                    facecolor=fig.get_facecolor(),
+                    dpi=300, bbox_inches='tight', pad_inches=0.5)
