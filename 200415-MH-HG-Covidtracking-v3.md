@@ -25,10 +25,13 @@ jupyter:
 
 
 ----------
+- 4/25 todo
+  - [ ] when I get time, consolidate all the calculation code so we're passing objects around not these crazy param structs - which are fine but should only be created once and not copied around.  
+  - [ ] change filenames so they sort correctly?
 - 4/24 todo
   - [ ] fix date offset
-  - [ ] get MN to work
-  - [ ] title for testing plot
+  - [ ] get MN to work - probably requires fixing up how the ````doubling[st]```` stuff is done
+  - [X] title for testing plot
   
 
 - 4/12 todo
@@ -237,7 +240,7 @@ fig = plott.fig_multipanel_test(doSave=True)
 %pdb off
 plott = cvd.PlotTesting(ctDf)
 
-fig = plott.fig_pos_test_rate(title_str='Positive test rates are steady or even rising', 
+fig = plott.fig_pos_test_rate(title_str='Positive test rates: no clear downturn yet', 
                               nbootreps=1000, doSave=True)
 ```
 
@@ -281,10 +284,12 @@ plotd.fig_increment(doSave=True, yname='deaths', nbootreps=nbootreps, smoothSpan
 
 This cell for testing, with a single axis panel
 
+
+just WI, IL
+
 ```python
-%pdb on
 stateL = ['WI','IL']
-nbootreps=100
+nbootreps=10
 
 paramsD.loc['WI',:] = pd.Series({'color':r_[sns.color_palette()[6]], 'fullname': 'Wisconsin'})
 paramsD.loc['IL',:] = pd.Series({'color':r_[sns.color_palette()[8]], 'fullname': 'Illinois'})
@@ -302,6 +307,30 @@ plotd.plot_increment('IL', doFit=True, nbootreps=nbootreps, color=sns.color_pale
 #plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day, Mid-Atlantic')
 ```
 
+try to get MN working too
+
+<!-- #region -->
+stateL = ['WI','IL','MN']
+nbootreps=10
+
+paramsD.loc['WI',:] = pd.Series({'color':r_[sns.color_palette()[6]], 'fullname': 'Wisconsin'})
+paramsD.loc['IL',:] = pd.Series({'color':r_[sns.color_palette()[8]], 'fullname': 'Illinois'})
+paramsD.loc['IL',:] = pd.Series({'color':r_[sns.color_palette()[8]], 'fullname': 'Minnesota'})
+#display(paramsD)
+for state in stateL:
+    xs, ys, dtV = cvd.df_to_plotdata(df, state, is_cases=True)
+    paramsD.loc[state,'plot_data'] = [{'xs':xs, 'ys':ys, 'dtV': dtV}]
+display(paramsD)    
+
+plotd = cvd.PlotDoubling(params=paramsD, stateList=stateL, smoothSpan=13)
+
+
+#plotd.plot_increment('IL', doFit=True, nbootreps=nbootreps, color=sns.color_palette()[0])
+plotd.plot_increment('MN', doFit=True, nbootreps=nbootreps, color=sns.color_palette()[0])
+;
+#plotd.fig_increment(doSave=True, yname='deaths', title_str='Deaths reported per day, Mid-Atlantic')
+<!-- #endregion -->
+
 ```python
 plotd = cvd.PlotDoubling(params=paramsC, smoothSpan=13)
 nbootreps=1000
@@ -313,7 +342,7 @@ plotd.fig_increment(doSave=True, yname='cases', nbootreps=nbootreps, smoothSpan=
 - refactored into a function
 
 ```python
-cvd.fig_midwest(paramsD, stateL, ctDf, nbootreps=10)
+cvd.fig_midwest(paramsD, stateL, ctDf, nbootreps=1000)
 ```
 
 ```python
