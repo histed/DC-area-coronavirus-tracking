@@ -13,10 +13,6 @@ jupyter:
     name: python3
 ---
 
-```python
-
-```
-
 <!-- #region -->
 # Load covidtracking data and make some plots
 
@@ -259,7 +255,7 @@ plotd.plot_doubling(title_str='Reported case growth slowing \n  in Washington, D
 ```python
 plotd = cvd.PlotDoubling(params=paramsD, smoothSpan=13)
 
-plotd.plot_doubling(title_str='Doubling time for reported deaths.\n  Not really enough data to draw inferences yet',
+plotd.plot_doubling(title_str='Doubling time for reported deaths.',
                     cred_left=True, ylim=[-1.9,16], yname='deaths')
 
 
