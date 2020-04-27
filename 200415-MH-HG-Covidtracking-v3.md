@@ -236,7 +236,7 @@ fig = plott.fig_multipanel_test(doSave=True)
 %pdb off
 plott = cvd.PlotTesting(ctDf)
 
-fig = plott.fig_pos_test_rate(title_str='Positive test rates: no clear downturn yet', 
+fig = plott.fig_pos_test_rate(title_str='Positive test rates', 
                               nbootreps=1000, doSave=True)
 ```
 
@@ -246,7 +246,7 @@ fig = plott.fig_pos_test_rate(title_str='Positive test rates: no clear downturn 
 ```python
 plotd = cvd.PlotDoubling(params=paramsC)
 
-plotd.plot_doubling(title_str='Reported case growth slowing \n  in Washington, DC area', ylim=(0,15))
+plotd.plot_doubling(title_str='Reported case growth slowing \n  in Washington, DC area', ylim=(0,20))
 
 
 
