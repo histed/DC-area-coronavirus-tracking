@@ -222,6 +222,12 @@ for state in ['DC']:
 multipanel plot
 
 ```python
+v0=np.diff(plott.datD['VA'].negV)
+print(v0)
+print(len(v0))
+```
+
+```python
 plott = cvd.PlotTesting(ctDf)
 
 fig = plott.fig_multipanel_test(doSave=True)
@@ -244,7 +250,7 @@ fig = plott.fig_pos_test_rate(title_str='Positive test rates',
 - refactored into covid_cases.py MH 200412
 
 ```python
-plotd = cvd.PlotDoubling(params=paramsC)
+plotd = cvd.PlotDoubling(params=paramsC, smoothSpan=14)
 
 plotd.plot_doubling(title_str='Reported case growth slowing \n  in Washington, DC area', ylim=(0,20))
 
@@ -253,7 +259,7 @@ plotd.plot_doubling(title_str='Reported case growth slowing \n  in Washington, D
 ```
 
 ```python
-plotd = cvd.PlotDoubling(params=paramsD, smoothSpan=13)
+plotd = cvd.PlotDoubling(params=paramsD, smoothSpan=21)
 
 plotd.plot_doubling(title_str='Doubling time for reported deaths.',
                     cred_left=True, ylim=[-1.9,16], yname='deaths')

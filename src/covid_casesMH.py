@@ -500,9 +500,12 @@ class PlotTesting:
                 # negV.loc[20200401] = negV.loc[20200402]/2
             if state == 'VA':
                 ndV[47] = ndV[48]/2 # apr 22 no tests, apr 23 doubled
-                ndV[48] = ndV[48]/2                
-                pdV[47] = pdV[48]/2
-                pdV[48] = pdV[48]/2                
+                ndV[48] = ndV[48]/2
+                r0 = np.mean(ndV[56:58])
+                #r0 = ndV[56]
+                #ndV[56]=40000
+                ndV[56] = r0
+                ndV[57] = r0
 
             pctPos = pdV / (pdV + ndV) * 100
             dtV = pd.to_datetime(stDf['date'], format='%Y%m%d')
@@ -576,7 +579,8 @@ class PlotTesting:
         ax3.annotate('Data notes:\n'
                      '• DC, Apr 1: reported zero neg. tests, and \n  on Apr 2 neg. count doubled, so we adjusted each\n  day to be half the Apr 3 number.\n'
                      '• DC, Apr 15: reported fewer than zero neg. tests;\n  dropped this point.\n'
-                     '• VA, Apr 22: reported zero tests.  4/23: Doubled test #s; \n split over both days.',                     
+                     '• VA, Apr 22: reported zero tests.  4/23: Doubled test #s; \n split over both days.\n'
+                     '• VA, May 2: reported fewer than zero neg tests.\n   5/1: approx tripled neg tests; averaged.',                     
                       xy=(0.05,0.1), xycoords='figure fraction')
 
         if doSave:
