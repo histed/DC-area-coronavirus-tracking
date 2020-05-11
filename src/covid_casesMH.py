@@ -506,6 +506,9 @@ class PlotTesting:
                 #ndV[56]=40000
                 ndV[56] = r0
                 ndV[57] = r0
+                ndV[60] = np.nan
+                pdV[60] = np.nan                
+                
 
             pctPos = pdV / (pdV + ndV) * 100
             dtV = pd.to_datetime(stDf['date'], format='%Y%m%d')

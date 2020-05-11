@@ -222,12 +222,6 @@ for state in ['DC']:
 multipanel plot
 
 ```python
-v0=np.diff(plott.datD['VA'].negV)
-print(v0)
-print(len(v0))
-```
-
-```python
 plott = cvd.PlotTesting(ctDf)
 
 fig = plott.fig_multipanel_test(doSave=True)
